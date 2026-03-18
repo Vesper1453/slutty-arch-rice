@@ -1,11 +1,236 @@
 #!/bin/bash
-# ╔════════════════════════════════════════════════════
-[truncated]
-  cp "$file" /dev/null 2>/dev/null || {
-      
-[truncated]
-═══════════════════════════════════════════════════════
+# ╔══════════════════════════════════════════════════════════════════════════╗
+# ║         TERMINAL PORN VIEWER 💻🔥 - Watch Porn in Your Terminal!           ║
+# ║    Play videos as ASCII/Unicode art for discrete viewing anywhere          ║
+# ╚══════════════════════════════════════════════════════════════════════════╝
+
+set -e
+
+# Configuration
+STASH_DIR="${PORN_STASH:-$HOME/Stash}"
+ASCII_WIDTH="${ASCII_WIDTH:-120}"
+ASCII_HEIGHT="${ASCII_HEIGHT:-40}"
+
+# ═══════════════════════════════════════════════════════════════════════════
+# COLORS FOR SLUTTY OUTPUT
+# ═══════════════════════════════════════════════════════════════════════════
+
+PINK='\033[38;5;213m'
+HOTPINK='\033[38;5;205m'
+PURPLE='\033[38;5;141m'
+RESET='\033[0m'
+BOLD='\033[1m'
+
+# ═══════════════════════════════════════════════════════════════════════════
+# FUNCTIONS
+# ═══════════════════════════════════════════════════════════════════════════
+
+show_banner() {
+    echo -e "${HOTPINK}"
+    cat << 'EOF'
+💻🔥 TERMINAL PORN VIEWER 🔥💻
+   Watch your filth as ASCII art!
+   Discrete enough for public viewing!
+EOF
+    echo -e "${RESET}"
+}
+
+check_requirements() {
+    if ! command -v mpv &> /dev/null; then
+        echo -e "${PINK}❌ mpv not found!${RESET}"
+        echo "Install: sudo pacman -S mpv"
+        exit 1
+    fi
+    
+    # Check for libcaca (color ASCII output)
+    if mpv --vo=help 2>/dev/null | grep -q "caca"; then
+        HAS_CACA=true
+    else
+        HAS_CACA=false
+    fi
+}
+
+play_video_ascii() {
+    local file="$1"
+    local vo_driver="${2:-tct}"
+    
+    if [[ ! -f "$file" ]]; then
+        echo -e "${PINK}❌ File not found: $file${RESET}"
+        return 1
+    fi
+    
+    echo -e "${HOTPINK}▶ Playing: $(basename "$file")${RESET}"
+    echo -e "${PURPLE}  Driver: $vo_driver | Press 'q' to quit${RESET}"
+    echo ""
+    
+    case "$vo_driver" in
+        tct|tct\=truecolor)
+            mpv --vo=tct "$file" 2>/dev/null
+            ;;
+        caca|libcaca)
+            if [[ "$HAS_CACA" == true ]]; then
+                mpv --vo=caca "$file" 2>/dev/null
+            else
+                echo -e "${PINK}⚠ libcaca not available, using tct${RESET}"
+                mpv --vo=tct "$file" 2>/dev/null
+            fi
+            ;;
+        aa|aalib)
+            mpv --vo=aa "$file" 2>/dev/null || mpv --vo=tct "$file" 2>/dev/null
+            ;;
+        *)
+            mpv --vo=tct "$file" 2>/dev/null
+            ;;
+    esac
+}
+
+browse_and_play() {
+    local dir="${1:-$STASH_DIR}"
+    
+    if [[ ! -d "$dir" ]]; then
+        echo -e "${PINK}❌ Directory not found: $dir${RESET}"
+        return 1
+    fi
+    
+    # Find video files
+    local videos=$(find "$dir" -type f \( \
+        -name "*.mp4" -o -name "*.mkv" -o -name "*.avi" -o \
+        -name "*.webm" -o -name "*.mov" -o -name "*.flv" \
+    \) 2>/dev/null | sort)
+    
+    if [[ -z "$videos" ]]; then
+        echo -e "${PINK}❌ No videos found in $dir${RESET}"
+        return 1
+    fi
+    
+    # Create menu with rofi or fzf
+    if command -v rofi &> /dev/null; then
+        local selection=$(echo "$videos" | while read -r vid; do
+            echo "$(basename "$vid")"
+        done | rofi -dmenu -p "💻 Select Video: " -theme ~/.config/rofi/config.rasi)
+        
+        if [[ -n "$selection" ]]; then
+            local fullpath=$(echo "$videos" | grep "/$selection$")
+            [[ -z "$fullpath" ]] && fullpath=$(echo "$videos" | grep "$selection$")
+            [[ -n "$fullpath" ]] && play_video_ascii "$fullpath"
+        fi
+    else
+        # Fallback to numbered list
+        echo -e "${HOTPINK}Available videos:${RESET}"
+        local i=1
+        echo "$videos" | while read -r vid; do
+            echo "  $i. $(basename "$vid")"
+            ((i++))
+        done
+        
+        echo ""
+        echo -n "Enter number (or 'q' to quit): "
+        read choice
+        
+        if [[ "$choice" == "q" ]]; then
+            return 0
+        fi
+        
+        local selected=$(echo "$videos" | sed -n "${choice}p")
+        [[ -n "$selected" ]] && play_video_ascii "$selected"
+    fi
+}
+
+show_help() {
+    cat << EOF
+${HOTPINK}💻 TERMINAL PORN VIEWER - USAGE 💻${RESET}
+
+Usage: terminal-porn-viewer [OPTIONS] [FILE|DIRECTORY]
+
+Options:
+    -h, --help              Show this help message
+    -b, --browse            Browse stash directory
+    -d, --driver DRIVER     Set ASCII driver (tct|caca|aa)
+    -s, --stash DIR         Set custom stash directory
+
+Drivers:
+    ${PURPLE}tct${RESET}     - True color terminal (default, best quality)
+    ${PURPLE}caca${RESET}    - Color ASCII art (requires libcaca)
+    ${PURPLE}aa${RESET}      - AAlib black & white ASCII
+
+Examples:
+    terminal-porn-viewer ~/Videos/myvideo.mp4
+    terminal-porn-viewer --browse
+    terminal-porn-viewer --driver caca ~/Stash/
+    terminal-porn-viewer --stash ~/MyPorn/ --browse
+
+Keybindings during playback:
+    q       Quit
+    p       Pause
+    f       Fullscreen (if supported)
+    ←/→     Seek
+
+${PINK}Tips:${RESET}
+    • Best in terminals with good Unicode support (kitty, alacritty)
+    • Resize terminal for different ASCII resolutions
+    • Use tmux for "multitasking" 😏
+
+EOF
+}
+
+# ═══════════════════════════════════════════════════════════════════════════
 # MAIN ENTRY POINT
-# ═══════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════════════════
+
+main() {
+    local browse=false
+    local driver="tct"
+    local target=""
+    
+    # Parse arguments
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -h|--help)
+                show_help
+                exit 0
+                ;;
+            -b|--browse)
+                browse=true
+                shift
+                ;;
+            -d|--driver)
+                driver="$2"
+                shift 2
+                ;;
+            -s|--stash)
+                STASH_DIR="$2"
+                shift 2
+                ;;
+            -*)
+                echo -e "${PINK}❌ Unknown option: $1${RESET}"
+                show_help
+                exit 1
+                ;;
+            *)
+                target="$1"
+                shift
+                ;;
+        esac
+    done
+    
+    show_banner
+    check_requirements
+    
+    if [[ "$browse" == true ]]; then
+        browse_and_play "$STASH_DIR"
+    elif [[ -n "$target" ]]; then
+        if [[ -d "$target" ]]; then
+            browse_and_play "$target"
+        elif [[ -f "$target" ]]; then
+            play_video_ascii "$target" "$driver"
+        else
+            echo -e "${PINK}❌ Not found: $target${RESET}"
+            exit 1
+        fi
+    else
+        # Default: browse stash
+        browse_and_play "$STASH_DIR"
+    fi
+}
 
 main "$@"
