@@ -44,29 +44,47 @@ check_prerequisites() {
         # Remove old install if exists
         [[ -d "$INSTALL_DIR" ]] && rm -rf "$INSTALL_DIR"
         
-        git clone "$REPO_URL" "$INSTALL_DIR" || {
-            log_error "Failed to clone repository. Trying with curl..."
-            # Fallback: download zip
-            curl -fsSL "https://github.com/Vesper1453/slutty-arch-rice/archive/refs/heads/main.zip" -o /tmp/slutty-arch-rice.zip
-            cd /tmp && unzip -q slutty-arch-rice.zip
+        # Try git clone first
+        if command -v git &>/dev/null; then
+            git clone --depth 1 "$REPO_URL" "$INSTALL_DIR" 2>/dev/null || {
+                log_warn "Git clone failed, trying wget..."
+                # Fallback: download zip
+                wget -q "https://github.com/Vesper1453/slutty-arch-rice/archive/refs/heads/main.zip" -O /tmp/slutty-arch-rice.zip 2>/dev/null || \
+                curl -fsSL "https://github.com/Vesper1453/slutty-arch-rice/archive/refs/heads/main.zip" -o /tmp/slutty-arch-rice.zip
+                cd /tmp && unzip -q slutty-arch-rice.zip && rm -f slutty-arch-rice.zip
+                [[ -d "$INSTALL_DIR" ]] && rm -rf "$INSTALL_DIR"
+                mv /tmp/slutty-arch-rice-main "$INSTALL_DIR"
+            }
+        else
+            # No git, use curl/wget
+            curl -fsSL "https://github.com/Vesper1453/slutty-arch-rice/archive/refs/heads/main.zip" -o /tmp/slutty-arch-rice.zip || \
+            wget -q "https://github.com/Vesper1453/slutty-arch-rice/archive/refs/heads/main.zip" -O /tmp/slutty-arch-rice.zip
+            cd /tmp && unzip -q slutty-arch-rice.zip && rm -f slutty-arch-rice.zip
+            [[ -d "$INSTALL_DIR" ]] && rm -rf "$INSTALL_DIR"
             mv /tmp/slutty-arch-rice-main "$INSTALL_DIR"
-        }
+        fi
         
         DOTFILES_DIR="$INSTALL_DIR"
         
         log_success "Repository downloaded to: $DOTFILES_DIR"
         log_info "Continuing setup from downloaded repo..."
         
-        # Re-run the setup from the downloaded location
+        # Export and continue with setup from the downloaded location
+        export DOTFILES_DIR
         cd "$DOTFILES_DIR"
-        exec bash "$DOTFILES_DIR/setup.sh" "${@}"
+        
+        # Continue with the rest of setup using the downloaded files
+        backup_existing
+        install_dependencies
+        link_configs
+        install_complete
+        exit 0
     else
         # Normal execution - script is a file
         DOTFILES_DIR="$(cd "$(dirname "$0")" && pwd)"
+        export DOTFILES_DIR
+        log_success "Dotfiles directory: $DOTFILES_DIR"
     fi
-    
-    export DOTFILES_DIR
-    log_success "Dotfiles directory: $DOTFILES_DIR"
 }
 
 # Backup existing configs
