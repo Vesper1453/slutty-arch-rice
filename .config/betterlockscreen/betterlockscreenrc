@@ -1,0 +1,46 @@
+# ╔══════════════════════════════════════════════════════════════════════════╗
+# ║          BETTERLOCKSCREEN CONFIG - SLUTTY ARCH RICE 💋                     ║
+# ║         Lockscreen styling that matches your current mode                ║
+# ╚══════════════════════════════════════════════════════════════════════════╝
+
+# Image to use for lockscreen (will be blurred)
+# Set by wallpaper setter
+ wallpaper_cmd="feh --bg-fill"
+
+# Lockscreen appearance - defaults, overridden by mode switcher
+insidecolor=00000000
+ringcolor=ff1493ff
+keyhlcolor=ff69b4ff
+bshlcolor=ff0000ff
+separatorcolor=00000000
+insidevercolor=ff1493ff
+insidewrongcolor=ff0000ff
+ringvercolor=ff69b4ff
+ringwrongcolor=ff0000ff
+verifcolor=ffb6c1ff
+timecolor=ffb6c1ff
+datecolor=ff69b4ff
+loginbox=1a0a2e
+loginshadow=000000
+locktext="Type password to unlock, slut..."
+
+# Font settings
+font="JetBrainsMono Nerd Font"
+size=24
+
+# Ring and bar settings
+ring-width=8.0
+verif-size=24
+time-size=32
+date-size=16
+
+# Positioning
+timepos="ix-400:iy+10"
+datepos="tx:ty+40"
+verifpos="ix+5:iy+55"
+
+# Extra effects
+blur=0.5
+indicator=true
+
+# Modified by switch-mode script based on current mode

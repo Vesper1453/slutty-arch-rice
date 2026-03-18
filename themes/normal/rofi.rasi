@@ -1,0 +1,113 @@
+/* ╔══════════════════════════════════════════════════════════════════════════╗
+   ║              ROFI CONFIG - NORMAL MODE 💼✨                               ║
+   ║         Clean dark theme with professional blue accents                ║
+   ╚══════════════════════════════════════════════════════════════════════════╝ */
+
+configuration {
+    modi: "drun,run,window,ssh";
+    font: "JetBrainsMono Nerd Font 11";
+    terminal: "alacritty";
+    drun-display-format: "{name}";
+    location: 0;
+    disable-history: false;
+    hide-scrollbar: true;
+    show-icons: true;
+    icon-theme: "Papirus";
+    display-drun: "✨ Apps";
+    display-run: "⚡ Run";
+    display-window: "🪟 Windows";
+    display-ssh: "🔐 SSH";
+}
+
+* {
+    bg: #1e1e2e;
+    bg-alt: #313244;
+    fg: #cdd6f4;
+    fg-alt: #a6adc8;
+    primary: #89b4fa;
+    secondary: #cba6f7;
+    accent: #fab387;
+    urgent: #f38ba8;
+    
+    background-color: @bg;
+    text-color: @fg;
+    border-color: @primary;
+    margin: 0;
+    padding: 0;
+    spacing: 0;
+}
+
+window {
+    width: 45%;
+    border: 2px;
+    border-radius: 8px;
+    padding: 15px;
+    background-color: @bg;
+    transparency: "real";
+}
+
+mainbox {
+    spacing: 10px;
+    padding: 15px;
+    children: [inputbar, listview];
+    background-color: transparent;
+}
+
+inputbar {
+    spacing: 6px;
+    padding: 10px;
+    border: 1px;
+    border-radius: 6px;
+    border-color: @primary;
+    background-color: @bg-alt;
+    children: [prompt, entry];
+}
+
+prompt {
+    font: "JetBrainsMono Nerd Font 12";
+    padding-right: 10px;
+    text-color: @primary;
+    background-color: transparent;
+}
+
+entry {
+    font: "JetBrainsMono Nerd Font 11";
+    placeholder: "Search...";
+    placeholder-color: @fg-alt;
+    background-color: transparent;
+    text-color: @fg;
+}
+
+listview {
+    spacing: 4px;
+    padding: 6px;
+    lines: 10;
+    columns: 1;
+    fixed-height: false;
+    background-color: transparent;
+}
+
+element {
+    padding: 8px 10px;
+    border-radius: 4px;
+    spacing: 10px;
+    background-color: @bg-alt;
+}
+
+element selected {
+    background-color: @primary;
+    text-color: @bg;
+}
+
+element selected.active {
+    background-color: @secondary;
+}
+
+element-icon {
+    size: 1.1em;
+    background-color: transparent;
+}
+
+element-text {
+    background-color: transparent;
+}

@@ -1,0 +1,227 @@
+#!/bin/bash
+# ╔══════════════════════════════════════════════════════════════════════════╗
+# ║          📚 HENTAI VIEWER - Manga & Doujinshi Reader 💋                   ║
+# ║    Optimized imv configuration for reading hentai manga                 ║
+# ╚══════════════════════════════════════════════════════════════════════════╝
+
+# Configuration
+MANGA_DIR="${1:-$HOME/Stash/Comics}"
+READER="${READER:-imv}"
+
+# imv config for hentai reading
+IMV_CONFIG="$HOME/.config/imv/hentai.conf"
+
+# Colors
+PINK='\033[38;5;205m'
+PURPLE='\033[38;5;141m'
+RESET='\033[0m'
+
+show_banner() {
+    echo -e "${PURPLE}"
+    cat << 'EOF'
+    __  ___________  ____________    _   ______  ____  _____
+   / / / /_  __/ |/ / ____/ __ \  / | / / __ \/ __ \/ ___/
+  / /_/ / / / /    / __/ / /_/ / /  |/ / / / / /_/ \__ \ 
+ / __  / / / / /| / /___/ _, _/ / /|  / /_/ / _, _/___/ / 
+/_/ /_/ /_/ /_/ |/_____/_/ |_| /_/ |_/_____/_/ |_|/____/  
+                                                           
+     💋 Optimized for Maximum Reading Pleasure 💋
+EOF
+    echo -e "${RESET}"
+}
+
+show_help() {
+    echo "Usage: hentai-viewer [MANGA_DIRECTORY]"
+    echo ""
+    echo "Keyboard shortcuts in imv:"
+    echo "  Space/Right    - Next page"
+    echo "  Backspace/Left - Previous page"
+    echo "  f              - Fullscreen"
+    echo "  r              - Rotate"
+    echo "  i              - Show info"
+    echo "  q              - Quit"
+    echo ""
+    echo "The reader remembers your last position!"
+}
+
+# Create imv config if it doesn't exist
+setup_imv_config() {
+    mkdir -p "$HOME/.config/imv"
+    
+    cat > "$IMV_CONFIG" << 'EOF'
+[options]
+# Scale images to fit window
+scaling_mode = fit
+# Start in fullscreen for immersion
+fullscreen = true
+# Loop through images
+loop = true
+# Background color (dark purple for degenerate mode)
+background = 1a0a2e
+# Slideshow disabled (manual control)
+slideshow = 0
+# Preload next images for smooth reading
+preload = 5
+
+[aliases]
+# Custom navigation for manga
+n = next
+p = prev
+space = next
+b = prev
+
+[binds]
+# Manga reading optimized
+<Right> = next
+<Left> = prev
+<Space> = next
+<BackSpace> = prev
+<Shift+Right> = next 5
+<Shift+Left> = prev 5
+f = fullscreen
+r = rotate 90
+R = rotate 270
+i = overlay
+q = quit
+<Escape> = quit
+
+# Zoom controls
+<Up> = zoom 1.1
+<Down> = zoom 0.9
+0 = zoom 1
+w = zoom actual
+
+# Panning
+h = pan -50 0
+j = pan 0 50
+k = pan 0 -50
+l = pan 50 0
+EOF
+}
+
+# Save reading progress
+save_progress() {
+    local manga_path="$1"
+    local current_page="$2"
+    local progress_file="$HOME/.config/hentai-progress"
+    
+    mkdir -p "$HOME/.config"
+    
+    # Save to progress file
+    echo "$(date +%s)|$manga_path|$current_page" >> "$progress_file"
+    
+    # Keep only last 50 entries
+    tail -n 50 "$progress_file" > "$progress_file.tmp" && mv "$progress_file.tmp" "$progress_file"
+}
+
+# Get last progress for a manga
+get_progress() {
+    local manga_path="$1"
+    local progress_file="$HOME/.config/hentai-progress"
+    
+    if [[ -f "$progress_file" ]]; then
+        grep "$manga_path" "$progress_file" | tail -1 | cut -d'|' -f3
+    fi
+}
+
+# Show recent manga
+show_recent() {
+    local progress_file="$HOME/.config/hentai-progress"
+    
+    if [[ -f "$progress_file" ]]; then
+        echo -e "${PINK}📚 Recent reading sessions:${RESET}"
+        tail -10 "$progress_file" | while IFS='|' read -r timestamp path page; do
+            local date=$(date -d "@$timestamp" '+%m/%d %H:%M' 2>/dev/null || echo "unknown")
+            echo "  $date - $(basename "$path") (page $page)"
+        done
+        echo ""
+    fi
+}
+
+# Main function
+main() {
+    show_banner
+    
+    if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+        show_help
+        exit 0
+    fi
+    
+    # Setup config
+    setup_imv_config
+    
+    # Check if manga directory exists
+    if [[ ! -d "$MANGA_DIR" ]]; then
+        echo -e "${PINK}Creating manga directory:${RESET} $MANGA_DIR"
+        mkdir -p "$MANGA_DIR"
+    fi
+    
+    # Show recent sessions
+    show_recent
+    
+    # If no specific manga given, let user choose
+    if [[ -d "$MANGA_DIR" && -z "$2" ]]; then
+        # Find all subdirectories (manga series)
+        local manga_list=()
+        while IFS= read -r -d '' dir; do
+            manga_list+=("$dir")
+        done < <(find "$MANGA_DIR" -maxdepth 2 -type d -print0 2>/dev/null | sort -z)
+        
+        if [[ ${#manga_list[@]} -gt 0 ]]; then
+            echo -e "${PURPLE}Available manga:${RESET}"
+            for i in "${!manga_list[@]}"; do
+                local count=$(find "${manga_list[$i]}" -type f \( -iname "*.jpg" -o -iname "*.png" -o -iname "*.jpeg" -o -iname "*.gif" -o -iname "*.webp" -o -iname "*.cbz" -o -iname "*.cbr" \) 2>/dev/null | wc -l)
+                printf "  [%2d] %-40s (%d pages)\n" "$i" "$(basename "${manga_list[$i]}")" "$count"
+            done
+            echo ""
+            
+            # If rofi is available, use it for selection
+            if command -v rofi &> /dev/null; then
+                local selection=$(printf '%s\n' "${manga_list[@]}" | sed 's|.*/||' | rofi -dmenu -p "📚 Select manga:")
+                if [[ -n "$selection" ]]; then
+                    for dir in "${manga_list[@]}"; do
+                        if [[ "$(basename "$dir")" == "$selection" ]]; then
+                            MANGA_DIR="$dir"
+                            break
+                        fi
+                    done
+                fi
+            fi
+        fi
+    fi
+    
+    # Check for reader
+    if ! command -v "$READER" &> /dev/null; then
+        echo -e "${PINK}imv not installed. Installing...${RESET}"
+        sudo pacman -S --noconfirm imv 2>/dev/null || echo "Please install imv manually"
+    fi
+    
+    # Count pages
+    local page_count=$(find "$MANGA_DIR" -type f \( -iname "*.jpg" -o -iname "*.png" -o -iname "*.jpeg" -o -iname "*.gif" -o -iname "*.webp" \) 2>/dev/null | wc -l)
+    local comic_count=$(find "$MANGA_DIR" -type f \( -iname "*.cbz" -o -iname "*.cbr" \) 2>/dev/null | wc -l)
+    
+    echo -e "${PINK}📖 Opening:${RESET} $(basename "$MANGA_DIR")"
+    echo -e "${PURPLE}   Images:${RESET} $page_count"
+    echo -e "${PURPLE}   Comics:${RESET} $comic_count"
+    echo ""
+    
+    # Launch reader
+    if [[ $comic_count -gt 0 ]]; then
+        # Has CBZ/CBR files - use mcomix or similar
+        if command -v mcomix &> /dev/null; then
+            mcomix "$MANGA_DIR" &
+        elif command -v qcomicbook &> /dev/null; then
+            qcomicbook "$MANGA_DIR" &
+        else
+            echo -e "${PINK}For .cbz/.cbr files, install mcomix:${RESET} sudo pacman -S mcomix"
+            $READER -c "$IMV_CONFIG" "$MANGA_DIR" &
+        fi
+    else
+        # Regular images - use imv
+        $READER -c "$IMV_CONFIG" "$MANGA_DIR" &
+    fi
+    
+    echo -e "${PINK}💋 Happy reading, you filthy degenerate! 💋${RESET}"
+}
+
+main "$@"

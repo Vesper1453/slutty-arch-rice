@@ -1,0 +1,317 @@
+#!/bin/bash
+# ╔══════════════════════════════════════════════════════════════════════════╗
+# ║          🎨 THUMBNAIL GENERATOR - Preview Gallery 💋                      ║
+# ║    Create preview thumbnails for your video and image collection        ║
+# ╚══════════════════════════════════════════════════════════════════════════╝
+
+# Configuration
+SOURCE_DIR="${1:-$HOME/Stash}"
+OUTPUT_DIR="${2:-$HOME/.stash-thumbnails}"
+THUMB_WIDTH="${3:-400}"
+THUMB_QUALITY="${4:-85}"
+
+# Colors
+PINK='\033[38;5;205m'
+PURPLE='\033[38;5;141m'
+GREEN='\033[38;5;82m'
+YELLOW='\033[38;5;226m'
+RESET='\033[0m'
+
+show_banner() {
+    echo -e "${PURPLE}"
+    cat << 'EOF'
+    __  ___      ___        ___           _        _              ___       __              
+   /  |/  /___ _/ (_)______/ (_)__  _____(_)____  (_)___ _       /   | ____/ /___ _      __ 
+  / /|_/ / __ `/ / / ___/ / / / _ \/ ___/ / __ \/ / __ `/      / /| |/ __  / __ \ | /| / /
+ / /  / / /_/ / / / /__/ / / /  __(__  ) / / / / / /_/ /      / ___ / /_/ / /_/ / |/ |/ / 
+/_/  /_/\__,_/_/_/\___/_/_/_/\___/____/_/_/ /_/_/\__, /      /_/  |_\__,_/\____/|__/|__/  
+                                                /____/                                     
+     💋 Creating Pretty Previews For Your Collection 💋
+EOF
+    echo -e "${RESET}"
+}
+
+show_help() {
+    echo "Usage: thumbnail-generator [SOURCE] [OUTPUT] [WIDTH] [QUALITY]"
+    echo ""
+    echo "Options:"
+    echo "  SOURCE   - Directory containing videos/images"
+    echo "  OUTPUT   - Where to save thumbnails"
+    echo "  WIDTH    - Thumbnail width in pixels (default: 400)"
+    echo "  QUALITY  - JPEG quality 1-100 (default: 85)"
+    echo ""
+    echo "Examples:"
+    echo "  thumbnail-generator ~/Stash/Videos"
+    echo "  thumbnail-generator ~/Stash ~/Thumbs 300 90"
+}
+
+# Check dependencies
+check_deps() {
+    local missing=()
+    
+    if ! command -v ffmpeg &> /dev/null; then
+        missing+=("ffmpeg")
+    fi
+    
+    if ! command -v convert &> /dev/null; then
+        missing+=("imagemagick")
+    fi
+    
+    if [[ ${#missing[@]} -gt 0 ]]; then
+        echo -e "${YELLOW}Installing:${RESET} ${missing[*]}"
+        sudo pacman -S --noconfirm "${missing[@]}" 2>/dev/null || {
+            echo "Install manually: sudo pacman -S ${missing[*]}"
+            exit 1
+        }
+    fi
+}
+
+# Generate video thumbnail (using middle frame)
+generate_video_thumb() {
+    local video="$1"
+    local output="$2"
+    local width="$3"
+    local quality="$4"
+    
+    # Get video duration
+    local duration=$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$video" 2>/dev/null)
+    
+    if [[ -z "$duration" || "$duration" == "0" ]]; then
+        return 1
+    fi
+    
+    # Get middle time
+    local middle=$(echo "$duration / 2" | bc -l 2>/dev/null || echo "10")
+    
+    # Generate thumbnail
+    ffmpeg -ss "$middle" -i "$video" \
+        -vf "scale=$width:-1:force_original_aspect_ratio=decrease" \
+        -vframes 1 \
+        -q:v "$((100-quality))" \
+        -y "$output" 2>/dev/null
+    
+    return $?
+}
+
+# Generate image thumbnail
+generate_image_thumb() {
+    local image="$1"
+    local output="$2"
+    local width="$3"
+    local quality="$4"
+    
+    convert "$image" \
+        -resize "${width}x" \
+        -quality "$quality" \
+        "$output" 2>/dev/null
+    
+    return $?
+}
+
+# Process files
+process_directory() {
+    local source="$1"
+    local output="$2"
+    local width="$3"
+    local quality="$4"
+    
+    mkdir -p "$output"
+    
+    local total=0
+    local videos=0
+    local images=0
+    local generated=0
+    local failed=0
+    
+    # Count files
+    while IFS= read -r -d '' file; do
+        ((total++))
+        local ext="${file##*.}"
+        ext=$(echo "$ext" | tr '[:upper:]' '[:lower:]')
+        
+        if [[ "$ext" =~ ^(mp4|mkv|avi|mov|wmv|flv|webm|m4v|mpeg|mpg)$ ]]; then
+            ((videos++))
+        elif [[ "$ext" =~ ^(jpg|jpeg|png|gif|webp)$ ]]; then
+            ((images++))
+        fi
+    done < <(find "$source" -type f \( \
+        -iname "*.mp4" -o -iname "*.mkv" -o -iname "*.avi" -o \
+        -iname "*.mov" -o -iname "*.wmv" -o -iname "*.flv" -o \
+        -iname "*.webm" -o -iname "*.m4v" -o -iname "*.jpeg" -o \
+        -iname "*.jpg" -o -iname "*.png" -o -iname "*.gif" -o \
+        -iname "*.webp" \) -print0 2>/dev/null)
+    
+    echo -e "${PINK}Found:${RESET} $total files ($videos videos, $images images)"
+    echo ""
+    
+    # Generate thumbnails
+    local processed=0
+    
+    while IFS= read -r -d '' file; do
+        ((processed++))
+        
+        # Create output path preserving directory structure
+        local rel_path="${file#$source/}"
+        local thumb_dir="$output/$(dirname "$rel_path")"
+        mkdir -p "$thumb_dir"
+        
+        local basename=$(basename "$file")
+        local thumb_name="${basename%.*}.jpg"
+        local thumb_path="$thumb_dir/$thumb_name"
+        
+        # Skip if thumbnail already exists and is newer
+        if [[ -f "$thumb_path" && "$thumb_path" -nt "$file" ]]; then
+            continue
+        fi
+        
+        local ext="${file##*.}"
+        ext=$(echo "$ext" | tr '[:upper:]' '[:lower:]')
+        
+        if [[ "$ext" =~ ^(mp4|mkv|avi|mov|wmv|flv|webm|m4v|mpeg|mpg)$ ]]; then
+            if generate_video_thumb "$file" "$thumb_path" "$width" "$quality"; then
+                ((generated++))
+                echo -e "${GREEN}✓${RESET} Video: $basename"
+            else
+                ((failed++))
+                echo -e "${YELLOW}✗${RESET} Failed: $basename"
+            fi
+        elif [[ "$ext" =~ ^(jpg|jpeg|png|gif|webp)$ ]]; then
+            if generate_image_thumb "$file" "$thumb_path" "$width" "$quality"; then
+                ((generated++))
+                echo -e "${GREEN}✓${RESET} Image: $basename"
+            else
+                ((failed++))
+                echo -e "${YELLOW}✗${RESET} Failed: $basename"
+            fi
+        fi
+        
+        # Progress every 10 files
+        if ((processed % 10 == 0)); then
+            echo -e "${PURPLE}Progress: $processed/$total (${generated} generated)${RESET}"
+        fi
+    done < <(find "$source" -type f \( \
+        -iname "*.mp4" -o -iname "*.mkv" -o -iname "*.avi" -o \
+        -iname "*.mov" -o -iname "*.wmv" -o -iname "*.flv" -o \
+        -iname "*.webm" -o -iname "*.m4v" -o -iname "*.jpeg" -o \
+        -iname "*.jpg" -o -iname "*.png" -o -iname "*.gif" -o \
+        -iname "*.webp" \) -print0 2>/dev/null)
+    
+    echo ""
+    echo -e "${PINK}💋 Complete! 💋${RESET}"
+    echo -e "${GREEN}Generated:${RESET} $generated thumbnails"
+    echo -e "${YELLOW}Failed:${RESET} $failed"
+    echo -e "${PURPLE}Output directory:${RESET} $output"
+}
+
+# Create HTML gallery
+create_gallery() {
+    local thumb_dir="$1"
+    local output_file="$HOME/stash-gallery.html"
+    
+    echo -e "${PINK}Creating HTML gallery...${RESET}"
+    
+    cat > "$output_file" << 'HTMLEOF'
+<!DOCTYPE html>
+<html>
+<head>
+    <title>💋 Stash Gallery 💋</title>
+    <style>
+        body {
+            background: #1a0a2e;
+            color: #ffb6c1;
+            font-family: sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #ff1493;
+        }
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+        }
+        .item {
+            background: #2d0f4e;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: transform 0.2s;
+        }
+        .item:hover {
+            transform: scale(1.05);
+        }
+        .item img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+        }
+        .item .title {
+            padding: 5px;
+            font-size: 12px;
+            text-align: center;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+    </style>
+</head>
+<body>
+    <h1>💋 Stash Gallery 💋</h1>
+    <div class="gallery">
+HTMLEOF
+    
+    # Add thumbnails
+    find "$thumb_dir" -name "*.jpg" -print0 2>/dev/null | while IFS= read -r -d '' thumb; do
+        local rel_path="${thumb#$thumb_dir/}"
+        local title=$(basename "$thumb" .jpg)
+        echo "        <div class=\"item\"><img src=\"$thumb\" alt=\"$title\"><div class=\"title\">$title</div></div>" >> "$output_file"
+    done
+    
+    cat >> "$output_file" << 'HTMLEOF'
+    </div>
+</body>
+</html>
+HTMLEOF
+    
+    echo -e "${GREEN}✓ Gallery created:${RESET} $output_file"
+}
+
+# Main
+main() {
+    show_banner
+    
+    if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+        show_help
+        exit 0
+    fi
+    
+    if [[ "$1" == "gallery" ]]; then
+        create_gallery "$OUTPUT_DIR"
+        exit 0
+    fi
+    
+    check_deps
+    
+    if [[ ! -d "$SOURCE_DIR" ]]; then
+        echo -e "${RED}Error:${RESET} Source directory not found: $SOURCE_DIR"
+        exit 1
+    fi
+    
+    mkdir -p "$OUTPUT_DIR"
+    
+    echo -e "${PINK}Settings:${RESET}"
+    echo -e "  Source: $SOURCE_DIR"
+    echo -e "  Output: $OUTPUT_DIR"
+    echo -e "  Width: $THUMB_WIDTH px"
+    echo -e "  Quality: $THUMB_QUALITY%"
+    echo ""
+    
+    process_directory "$SOURCE_DIR" "$OUTPUT_DIR" "$THUMB_WIDTH" "$THUMB_QUALITY"
+    
+    echo ""
+    echo -e "${YELLOW}To create HTML gallery:${RESET}"
+    echo "  thumbnail-generator gallery"
+}
+
+main "$@"

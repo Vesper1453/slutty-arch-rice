@@ -1,0 +1,251 @@
+#!/bin/bash
+# ╔══════════════════════════════════════════════════════════════════════════╗
+# ║          🧹 METADATA CLEANER - Strip Identifying Info 💋                ║
+# ║    Remove EXIF data and metadata from images and videos                 ║
+# ╚══════════════════════════════════════════════════════════════════════════╝
+
+# Colors
+PINK='\033[38;5;205m'
+PURPLE='\033[38;5;141m'
+GREEN='\033[38;5;82m'
+RED='\033[38;5;196m'
+RESET='\033[0m'
+
+show_banner() {
+    echo -e "${PURPLE}"
+    cat << 'EOF'
+    __  ____________  _____ __________  ________  _______  ____  ____________
+   /  |/  / ____/ / / / //_/ ____/ / / / ____/ / ___/\ \/ /  |/  / ____/ / /
+  / /|_/ / __/ / /_/ / ,< / __/ / /_/ / __/    \__ \  \  / /|_/ / /   / / / 
+ / /  / / /___/ __  / /| / /___/ __  / /___   ___/ /  / / /  / / /___/_/_/  
+/_/  /_/_____/_/ /_/_/ |_/_____/_/ /_/_____/  /____/  /_/_/  /_/_____(_)    
+                                                                              
+     💋 Cleaning Up Your Dirty Metadata 💋
+EOF
+    echo -e "${RESET}"
+}
+
+show_help() {
+    echo "Usage: metadata-cleaner [OPTIONS] [FILES...]"
+    echo ""
+    echo "Options:"
+    echo "  -r, --recursive     Process directories recursively"
+    echo "  -d, --dry-run       Show what would be done without cleaning"
+    echo "  -v, --verify        Verify cleaning was successful"
+    echo "  -h, --help          Show this help"
+    echo ""
+    echo "Examples:"
+    echo "  metadata-cleaner photo.jpg"
+    echo "  metadata-cleaner -r ~/Stash/"
+    echo "  metadata-cleaner -d *.mp4"
+}
+
+# Check dependencies
+check_deps() {
+    local missing=()
+    
+    if ! command -v exiftool &> /dev/null; then
+        missing+=("perl-image-exiftool")
+    fi
+    
+    if ! command -v ffmpeg &> /dev/null; then
+        missing+=("ffmpeg")
+    fi
+    
+    if [[ ${#missing[@]} -gt 0 ]]; then
+        echo -e "${RED}Missing dependencies:${RESET} ${missing[*]}"
+        echo "Install with: sudo pacman -S ${missing[*]}"
+        exit 1
+    fi
+}
+
+# Clean image metadata
+clean_image() {
+    local file="$1"
+    local dry_run="$2"
+    
+    if [[ "$dry_run" == "true" ]]; then
+        echo -e "${PURPLE}[DRY RUN]${RESET} Would clean: $(basename "$file")"
+        exiftool "$file" 2>/dev/null | head -20
+        return 0
+    fi
+    
+    # Create backup
+    local backup="${file}.original"
+    cp "$file" "$backup" 2>/dev/null || true
+    
+    # Strip all metadata
+    exiftool -all= \
+        -r \
+        -overwrite_original \
+        -q \
+        "$file" 2>/dev/null
+    
+    if [[ $? -eq 0 ]]; then
+        echo -e "${GREEN}✓${RESET} Cleaned: $(basename "$file")"
+        rm -f "$backup"
+        return 0
+    else
+        echo -e "${RED}✗${RESET} Failed: $(basename "$file")"
+        mv "$backup" "$file" 2>/dev/null || true
+        return 1
+    fi
+}
+
+# Clean video metadata
+clean_video() {
+    local file="$1"
+    local dry_run="$2"
+    local temp_file="${file}.cleaned.tmp"
+    
+    if [[ "$dry_run" == "true" ]]; then
+        echo -e "${PURPLE}[DRY RUN]${RESET} Would clean: $(basename "$file")"
+        ffprobe -v quiet -print_format json -show_format -show_streams "$file" 2>/dev/null | grep -E '"(title|artist|comment|date|copyright)"' || echo "  No obvious metadata tags"
+        return 0
+    fi
+    
+    # Strip metadata with ffmpeg
+    ffmpeg -i "$file" \
+        -map_metadata -1 \
+        -c copy \
+        -y \
+        "$temp_file" 2>/dev/null
+    
+    if [[ $? -eq 0 && -f "$temp_file" ]]; then
+        mv "$temp_file" "$file"
+        echo -e "${GREEN}✓${RESET} Cleaned: $(basename "$file")"
+        return 0
+    else
+        rm -f "$temp_file"
+        echo -e "${RED}✗${RESET} Failed: $(basename "$file")"
+        return 1
+    fi
+}
+
+# Verify cleaning
+verify_cleaning() {
+    local file="$1"
+    local ext="${file##*.}"
+    ext=$(echo "$ext" | tr '[:upper:]' '[:lower:]')
+    
+    echo -e "${PURPLE}Verifying:${RESET} $(basename "$file")"
+    
+    if [[ "$ext" =~ ^(jpg|jpeg|png|gif|webp|bmp|tiff)$ ]]; then
+        local remaining=$(exiftool "$file" 2>/dev/null | wc -l)
+        if [[ $remaining -le 5 ]]; then
+            echo -e "${GREEN}  ✓ Clean!${RESET} ($remaining tags remaining)"
+        else
+            echo -e "${RED}  ✗ Still dirty${RESET} ($remaining tags remaining)"
+        fi
+    elif [[ "$ext" =~ ^(mp4|mkv|avi|mov|wmv|flv|webm|m4v)$ ]]; then
+        local meta=$(ffprobe -v quiet -print_format json -show_format "$file" 2>/dev/null | grep -c '"TAG')
+        if [[ $meta -eq 0 ]]; then
+            echo -e "${GREEN}  ✓ Clean!${RESET} (no metadata tags)"
+        else
+            echo -e "${RED}  ✗ Still dirty${RESET} ($meta tags remaining)"
+        fi
+    fi
+}
+
+# Process single file
+process_file() {
+    local file="$1"
+    local dry_run="$2"
+    local verify="$3"
+    local ext="${file##*.}"
+    ext=$(echo "$ext" | tr '[:upper:]' '[:lower:]')
+    
+    if [[ "$ext" =~ ^(jpg|jpeg|png|gif|webp|bmp|tiff)$ ]]; then
+        clean_image "$file" "$dry_run"
+    elif [[ "$ext" =~ ^(mp4|mkv|avi|mov|wmv|flv|webm|m4v)$ ]]; then
+        clean_video "$file" "$dry_run"
+    else
+        echo -e "${PURPLE}Skipping:${RESET} $(basename "$file") (unknown type)"
+        return 0
+    fi
+    
+    if [[ "$verify" == "true" && "$dry_run" != "true" ]]; then
+        verify_cleaning "$file"
+    fi
+}
+
+# Main
+main() {
+    show_banner
+    check_deps
+    
+    local recursive=false
+    local dry_run=false
+    local verify=false
+    local files=()
+    
+    # Parse arguments
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -r|--recursive)
+                recursive=true
+                shift
+                ;;
+            -d|--dry-run)
+                dry_run=true
+                shift
+                ;;
+            -v|--verify)
+                verify=true
+                shift
+                ;;
+            -h|--help)
+                show_help
+                exit 0
+                ;;
+            -*)
+                echo "Unknown option: $1"
+                show_help
+                exit 1
+                ;;
+            *)
+                files+=("$1")
+                shift
+                ;;
+        esac
+    done
+    
+    if [[ ${#files[@]} -eq 0 ]]; then
+        echo -e "${RED}Error:${RESET} No files specified!"
+        show_help
+        exit 1
+    fi
+    
+    local processed=0
+    local cleaned=0
+    local failed=0
+    
+    for target in "${files[@]}"; do
+        if [[ -f "$target" ]]; then
+            process_file "$target" "$dry_run" "$verify"
+            ((processed++))
+            [[ $? -eq 0 ]] && ((cleaned++)) || ((failed++))
+        elif [[ -d "$target" && "$recursive" == "true" ]]; then
+            while IFS= read -r -d '' file; do
+                process_file "$file" "$dry_run" "$verify"
+                ((processed++))
+                [[ $? -eq 0 ]] && ((cleaned++)) || ((failed++))
+            done < <(find "$target" -type f \( \
+                -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" -o \
+                -iname "*.gif" -o -iname "*.webp" -o -iname "*.mp4" -o \
+                -iname "*.mkv" -o -iname "*.avi" -o -iname "*.mov" \) -print0)
+        else
+            echo -e "${RED}Error:${RESET} Cannot process: $target"
+        fi
+    done
+    
+    echo ""
+    echo -e "${PINK}💋 Done! 💋${RESET}"
+    echo -e "${PURPLE}Processed:${RESET} $processed"
+    if [[ "$dry_run" != "true" ]]; then
+        echo -e "${GREEN}Cleaned:${RESET} $cleaned"
+        echo -e "${RED}Failed:${RESET} $failed"
+    fi
+}
+
+main "$@"

@@ -1,0 +1,226 @@
+#!/bin/bash
+# ╔══════════════════════════════════════════════════════════════════════════╗
+# ║          🔍 DUPLICATE FINDER - Clean Up Your Collection 💋              ║
+# ║    Find and manage duplicate images and videos                          ║
+# ╚══════════════════════════════════════════════════════════════════════════╝
+
+# Configuration
+SEARCH_DIR="${1:-$HOME/Stash}"
+MIN_SIZE="${2:-1M}"  # Minimum file size to check
+
+# Colors
+PINK='\033[38;5;205m'
+PURPLE='\033[38;5;141m'
+GREEN='\033[38;5;82m'
+YELLOW='\033[38;5;226m'
+RESET='\033[0m'
+
+show_banner() {
+    echo -e "${PURPLE}"
+    cat << 'EOF'
+    ____  _                            _____ _ _      _       
+   / __ \(_)________  ____ ___  ____ _  / ___/(_) |    (_)      
+  / / / / / ___/ __ \/ __ `__ \/ __ `/  \__ \/ / |   / /       
+ / /_/ / / /__/ /_/ / / / / / / /_/ /   ___/ / /| |  / /        
+/_____/_/\___/\____/_/ /_/ /_/\__,_/   /____/_/ |_| /_/          
+                                                                
+     💋 Finding Your Duplicate Smut 💋
+EOF
+    echo -e "${RESET}"
+}
+
+show_help() {
+    echo "Usage: duplicate-finder [DIRECTORY] [MIN_SIZE]"
+    echo ""
+    echo "Examples:"
+    echo "  duplicate-finder ~/Stash"
+    echo "  duplicate-finder ~/Stash 5M    # Only files > 5MB"
+    echo ""
+    echo "This tool uses rmlint for fast duplicate detection."
+}
+
+# Check dependencies
+check_deps() {
+    local missing=()
+    
+    if ! command -v rmlint &> /dev/null; then
+        missing+=("rmlint")
+    fi
+    
+    if ! command -v fdupes &> /dev/null; then
+        missing+=("fdupes")
+    fi
+    
+    if [[ ${#missing[@]} -gt 0 ]]; then
+        echo -e "${YELLOW}Installing missing dependencies...${RESET}"
+        sudo pacman -S --noconfirm "${missing[@]}" 2>/dev/null || {
+            echo "Please install manually: sudo pacman -S ${missing[*]}"
+            exit 1
+        }
+    fi
+}
+
+# Find duplicates with rmlint
+find_duplicates_rmlint() {
+    local dir="$1"
+    local min_size="$2"
+    
+    echo -e "${PINK}Scanning with rmlint...${RESET}"
+    
+    local output_file="/tmp/rmlint-output.sh"
+    
+    rmlint "$dir" \
+        -T df,dd \
+        -s "$min_size" \
+        --rank-by=pOlLDPmSa \
+        -o sh:"$output_file" \
+        -o json:/tmp/rmlint-output.json \
+        2>/dev/null
+    
+    if [[ -f "$output_file" ]]; then
+        local dupes=$(grep -c "rm -rf" "$output_file" 2>/dev/null || echo 0)
+        echo -e "${GREEN}  ✓ Found $dupes duplicate groups${RESET}"
+        
+        # Show summary
+        if [[ -f /tmp/rmlint-output.json ]]; then
+            local total_size=$(jq -r '.[].size' /tmp/rmlint-output.json 2>/dev/null | awk '{sum+=$1} END {printf "%.2f", sum/1024/1024/1024}')
+            echo -e "${PURPLE}  Total wasted space:${RESET} ${total_size} GB"
+        fi
+        
+        echo ""
+        echo -e "${YELLOW}To delete duplicates, run:${RESET}"
+        echo "  $output_file"
+        echo ""
+        echo -e "${YELLOW}Review first:${RESET} cat $output_file"
+    fi
+}
+
+# Find duplicates with fdupes (fallback)
+find_duplicates_fdupes() {
+    local dir="$1"
+    
+    echo -e "${PINK}Scanning with fdupes...${RESET}"
+    
+    local output="/tmp/fdupes-output.txt"
+    fdupes -r -s "$dir" > "$output" 2>/dev/null
+    
+    local groups=$(grep -c "^$" "$output" 2>/dev/null || echo 0)
+    local dupes=$(grep -c . "$output" 2>/dev/null || echo 0)
+    
+    echo -e "${GREEN}  ✓ Found $groups duplicate groups ($dupes files)${RESET}"
+    
+    if [[ $dupes -gt 0 ]]; then
+        echo ""
+        echo -e "${YELLOW}Top 10 duplicate groups:${RESET}"
+        head -30 "$output"
+    fi
+}
+
+# Interactive duplicate review
+interactive_review() {
+    local script="/tmp/rmlint-output.sh"
+    
+    if [[ ! -f "$script" ]]; then
+        echo -e "${RED}No duplicate report found. Run scan first.${RESET}"
+        return 1
+    fi
+    
+    echo -e "${PINK}💋 Interactive Duplicate Review 💋${RESET}"
+    echo ""
+    
+    # Parse duplicate groups
+    local groups=()
+    local current_group=()
+    
+    while IFS= read -r line; do
+        if [[ "$line" =~ ^rm[[:space:]]-rf[[:space:]] ]]; then
+            file=$(echo "$line" | sed 's/rm -rf //')
+            current_group+=("$file")
+        elif [[ -z "$line" && ${#current_group[@]} -gt 0 ]]; then
+            groups+=("${current_group[*]}")
+            current_group=()
+        fi
+    done < <(grep "^rm -rf" "$script" | sed 's/rm -rf //')
+    
+    # Review each group
+    local deleted=0
+    local saved=0
+    
+    for group in "${groups[@]}"; do
+        echo -e "${PURPLE}Duplicate Group:${RESET}"
+        readarray -t files <<< "$group"
+        
+        # Show original (keep this)
+        echo -e "${GREEN}  [KEEP]${RESET} ${files[0]}"
+        
+        # Show duplicates
+        for ((i=1; i<${#files[@]}; i++)); do
+            echo -e "${YELLOW}  [DELETE?]${RESET} ${files[$i]}"
+        done
+        
+        read -p "Delete duplicates? (y/n/q): " choice
+        
+        case "$choice" in
+            y|Y)
+                for ((i=1; i<${#files[@]}; i++)); do
+                    local fsize=$(stat -c%s "${files[$i]}" 2>/dev/null || echo 0)
+                    rm -f "${files[$i]}"
+                    ((deleted++))
+                    saved=$((saved + fsize))
+                    echo -e "${GREEN}  ✓ Deleted:${RESET} ${files[$i]}"
+                done
+                ;;
+            q|Q)
+                break
+                ;;
+        esac
+        
+        echo ""
+    done
+    
+    saved_mb=$((saved / 1024 / 1024))
+    echo -e "${GREEN}💋 Deleted $deleted files, saved ${saved_mb}MB 💋${RESET}"
+}
+
+# Main
+main() {
+    show_banner
+    
+    if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+        show_help
+        exit 0
+    fi
+    
+    if [[ "$1" == "review" ]]; then
+        interactive_review
+        exit 0
+    fi
+    
+    check_deps
+    
+    if [[ ! -d "$SEARCH_DIR" ]]; then
+        echo -e "${RED}Error:${RESET} Directory not found: $SEARCH_DIR"
+        exit 1
+    fi
+    
+    echo -e "${PINK}Scanning:${RESET} $SEARCH_DIR"
+    echo -e "${PURPLE}Min size:${RESET} $MIN_SIZE"
+    echo ""
+    
+    # Use rmlint if available
+    if command -v rmlint &> /dev/null; then
+        find_duplicates_rmlint "$SEARCH_DIR" "$MIN_SIZE"
+    else
+        find_duplicates_fdupes "$SEARCH_DIR"
+    fi
+    
+    echo ""
+    echo -e "${PINK}💋 Scan complete! 💋${RESET}"
+    echo ""
+    echo "Next steps:"
+    echo "  • Review the duplicate report"
+    echo "  • Run: duplicate-finder review    (interactive mode)"
+    echo "  • Or execute the generated script to delete"
+}
+
+main "$@"

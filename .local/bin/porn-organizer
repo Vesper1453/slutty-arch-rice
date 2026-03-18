@@ -1,0 +1,208 @@
+#!/bin/bash
+# ╔══════════════════════════════════════════════════════════════════════════╗
+# ║          🗂️ PORN ORGANIZER - Sort Your Filthy Collection 💋             ║
+# ║    Automatically organize adult videos and images by type, date, etc.     ║
+# ╚══════════════════════════════════════════════════════════════════════════╝
+
+set -e
+
+# Configuration
+SOURCE_DIR="${1:-$HOME/Downloads}"
+DEST_DIR="${2:-$HOME/Stash}"
+ORGANIZE_BY="${3:-type}"  # type, date, or performer
+
+# File extensions
+VIDEO_EXTS="mp4|mkv|avi|mov|wmv|flv|webm|m4v|mpeg|mpg"
+IMAGE_EXTS="jpg|jpeg|png|gif|webp|bmp|tiff|avif"
+COMIC_EXTS="cbz|cbr|pdf|zip|rar"
+
+# Colors for output
+PINK='\033[38;5;205m'
+PURPLE='\033[38;5;141m'
+RED='\033[38;5;196m'
+RESET='\033[0m'
+
+# ═══════════════════════════════════════════════════════════════════════════
+# FUNCTIONS
+# ═══════════════════════════════════════════════════════════════════════════
+
+show_banner() {
+    echo -e "${PURPLE}"
+    cat << 'EOF'
+    ____  ____  ____  _   __   ______            __             
+   / __ \/ __ \/ __ \/ | / /  / ____/___  ____/ /__  ___  _____
+  / /_/ / /_/ / / / /  |/ /  / __/ / __ \/ __  / _ \/ _ \/ ___/
+ / ____/ _, _/ /_/ / /|  /  / /___/ / / / /_/ /  __/  __/ /    
+/_/   /_/ |_|\____/_/ |_/  /_____/_/ /_/\__,_/\___/\___/_/     
+                                                               
+     💋 Organizing Your Filthy Collection 💋
+EOF
+    echo -e "${RESET}"
+}
+
+show_help() {
+    echo "Usage: porn-organizer [SOURCE] [DESTINATION] [METHOD]"
+    echo ""
+    echo "Methods:"
+    echo "  type      - Organize by file type (video/image/comic)"
+    echo "  date      - Organize by creation date (YYYY/MM)"
+    echo "  performer - Organize alphabetically by filename"
+    echo ""
+    echo "Example:"
+    echo "  porn-organizer ~/Downloads ~/Stash type"
+}
+
+get_file_type() {
+    local file="$1"
+    local ext="${file##*.}"
+    ext=$(echo "$ext" | tr '[:upper:]' '[:lower:]')
+    
+    if [[ "$ext" =~ ^($VIDEO_EXTS)$ ]]; then
+        echo "Videos"
+    elif [[ "$ext" =~ ^($IMAGE_EXTS)$ ]]; then
+        echo "Images"
+    elif [[ "$ext" =~ ^($COMIC_EXTS)$ ]]; then
+        echo "Comics"
+    else
+        echo "Other"
+    fi
+}
+
+get_date_folder() {
+    local file="$1"
+    local date_str
+    
+    # Try to get creation date
+    date_str=$(stat -c %y "$file" 2>/dev/null | cut -d' ' -f1)
+    if [[ -z "$date_str" ]]; then
+        date_str=$(date +%Y-%m-%d)
+    fi
+    
+    # Extract year and month
+    local year=$(echo "$date_str" | cut -d'-' -f1)
+    local month=$(echo "$date_str" | cut -d'-' -f2)
+    
+    echo "$year/$month"
+}
+
+get_performer_folder() {
+    local file="$1"
+    local basename=$(basename "$file")
+    
+    # Get first letter of filename for alphabetical sorting
+    local first_char=$(echo "$basename" | cut -c1 | tr '[:lower:]' '[:upper:]')
+    
+    if [[ "$first_char" =~ [A-Z] ]]; then
+        echo "$first_char"
+    else
+        echo "0-9"
+    fi
+}
+
+organize_file() {
+    local file="$1"
+    local dest_subdir
+    
+    case "$ORGANIZE_BY" in
+        type)
+            dest_subdir=$(get_file_type "$file")
+            ;;
+        date)
+            dest_subdir=$(get_date_folder "$file")
+            ;;
+        performer)
+            dest_subdir=$(get_performer_folder "$file")
+            ;;
+        *)
+            dest_subdir="Unsorted"
+            ;;
+    esac
+    
+    local dest_path="$DEST_DIR/$dest_subdir"
+    mkdir -p "$dest_path"
+    
+    # Move file (use rsync if available, else cp + rm)
+    if command -v rsync &> /dev/null; then
+        rsync -av --progress "$file" "$dest_path/" 2>/dev/null || cp "$file" "$dest_path/"
+    else
+        cp "$file" "$dest_path/"
+    fi
+    
+    echo -e "${PINK}✓${RESET} Moved: $(basename "$file") → $dest_subdir"
+}
+
+count_files() {
+    local count=0
+    while IFS= read -r -d '' file; do
+        ((count++))
+    done < <(find "$SOURCE_DIR" -type f \( \
+        -iname "*.mp4" -o -iname "*.mkv" -o -iname "*.avi" -o \
+        -iname "*.mov" -o -iname "*.wmv" -o -iname "*.flv" -o \
+        -iname "*.webm" -o -iname "*.m4v" -o -iname "*.mpeg" -o \
+        -iname "*.mpg" -o -iname "*.jpg" -o -iname "*.jpeg" -o \
+        -iname "*.png" -o -iname "*.gif" -o -iname "*.webp" -o \
+        -iname "*.cbz" -o -iname "*.cbr" -o -iname "*.pdf" \
+    \) -print0 2>/dev/null)
+    
+    echo "$count"
+}
+
+main() {
+    show_banner
+    
+    # Check arguments
+    if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+        show_help
+        exit 0
+    fi
+    
+    # Validate directories
+    if [[ ! -d "$SOURCE_DIR" ]]; then
+        echo -e "${RED}Error:${RESET} Source directory not found: $SOURCE_DIR"
+        exit 1
+    fi
+    
+    mkdir -p "$DEST_DIR"
+    
+    echo -e "${PURPLE}Organizing by:${RESET} $ORGANIZE_BY"
+    echo -e "${PURPLE}Source:${RESET} $SOURCE_DIR"
+    echo -e "${PURPLE}Destination:${RESET} $DEST_DIR"
+    echo ""
+    
+    # Count total files
+    local total=$(count_files)
+    echo -e "${PINK}Found $total files to organize...${RESET}"
+    echo ""
+    
+    # Process files
+    local processed=0
+    while IFS= read -r -d '' file; do
+        organize_file "$file"
+        ((processed++))
+        
+        # Show progress every 10 files
+        if ((processed % 10 == 0)); then
+            echo -e "${PURPLE}Progress: $processed/$total${RESET}"
+        fi
+    done < <(find "$SOURCE_DIR" -type f \( \
+        -iname "*.mp4" -o -iname "*.mkv" -o -iname "*.avi" -o \
+        -iname "*.mov" -o -iname "*.wmv" -o -iname "*.flv" -o \
+        -iname "*.webm" -o -iname "*.m4v" -o -iname "*.mpeg" -o \
+        -iname "*.mpg" -o -iname "*.jpg" -o -iname "*.jpeg" -o \
+        -iname "*.png" -o -iname "*.gif" -o -iname "*.webp" -o \
+        -iname "*.cbz" -o -iname "*.cbr" -o -iname "*.pdf" \
+    \) -print0 2>/dev/null)
+    
+    echo ""
+    echo -e "${PINK}💋 Done! Organized $processed files 💋${RESET}"
+    echo -e "${PURPLE}Your collection is now sorted like a good slut!${RESET}"
+    
+    # Show directory tree
+    if command -v tree &> /dev/null; then
+        echo ""
+        echo "Directory structure:"
+        tree -L 2 "$DEST_DIR" 2>/dev/null || ls -la "$DEST_DIR"
+    fi
+}
+
+main "$@"

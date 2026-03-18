@@ -1,0 +1,82 @@
+#!/bin/bash
+# ╔══════════════════════════════════════════════════════════════════════════╗
+# ║              UPDATE LOCKSCREEN COLORS BASED ON MODE 💋                   ║
+# ║    Updates betterlockscreen config when mode changes                   ║
+# ╚══════════════════════════════════════════════════════════════════════════╝
+
+set -e
+
+CONFIG_FILE="$HOME/.config/betterlockscreen/betterlockscreenrc"
+CURRENT_MODE_FILE="$HOME/.config/arch-rice-mode"
+
+# Get current mode
+if [[ -f "$CURRENT_MODE_FILE" ]]; then
+    CURRENT_MODE=$(cat "$CURRENT_MODE_FILE")
+else
+    CURRENT_MODE="normal"
+fi
+
+# Mode-specific color schemes
+case "$CURRENT_MODE" in
+    degenerate)
+        # Hot pink and deep purple
+        RING_COLOR="ff1493ff"
+        KEYHL_COLOR="ff69b4ff"
+        BSHL_COLOR="ff0000ff"
+        SEPARATOR_COLOR="00000000"
+        INSIDEVER_COLOR="ff1493ff"
+        INSIDEWRONG_COLOR="ff0000ff"
+        RINGVER_COLOR="ff69b4ff"
+        RINGWRONG_COLOR="ff0000ff"
+        VERIF_COLOR="ffb6c1ff"
+        TIME_COLOR="ffb6c1ff"
+        DATE_COLOR="ff69b4ff"
+        LOGINBOX="1a0a2e"
+        ;;
+    horny)
+        # Orange-red and maroon
+        RING_COLOR="ff4500ff"
+        KEYHL_COLOR="ff6347ff"
+        BSHL_COLOR="dc143cff"
+        SEPARATOR_COLOR="00000000"
+        INSIDEVER_COLOR="ff4500ff"
+        INSIDEWRONG_COLOR="dc143cff"
+        RINGVER_COLOR="ff6347ff"
+        RINGWRONG_COLOR="dc143cff"
+        VERIF_COLOR="ffa07aff"
+        TIME_COLOR="ffa07aff"
+        DATE_COLOR="ff7f50ff"
+        LOGINBOX="2e0a1a"
+        ;;
+    normal)
+        # Blue and dark gray
+        RING_COLOR="89b4faff"
+        KEYHL_COLOR="cba6f7ff"
+        BSHL_COLOR="f38ba8ff"
+        SEPARATOR_COLOR="00000000"
+        INSIDEVER_COLOR="89b4faff"
+        INSIDEWRONG_COLOR="f38ba8ff"
+        RINGVER_COLOR="cba6f7ff"
+        RINGWRONG_COLOR="f38ba8ff"
+        VERIF_COLOR="cdd6f4ff"
+        TIME_COLOR="cdd6f4ff"
+        DATE_COLOR="a6adc8ff"
+        LOGINBOX="1e1e2e"
+        ;;
+esac
+
+# Update the config file
+sed -i "s/ringcolor=.*/ringcolor=${RING_COLOR}/" "$CONFIG_FILE"
+sed -i "s/keyhlcolor=.*/keyhlcolor=${KEYHL_COLOR}/" "$CONFIG_FILE"
+sed -i "s/bshlcolor=.*/bshlcolor=${BSHL_COLOR}/" "$CONFIG_FILE"
+sed -i "s/separatorcolor=.*/separatorcolor=${SEPARATOR_COLOR}/" "$CONFIG_FILE"
+sed -i "s/insidevercolor=.*/insidevercolor=${INSIDEVER_COLOR}/" "$CONFIG_FILE"
+sed -i "s/insidewrongcolor=.*/insidewrongcolor=${INSIDEWRONG_COLOR}/" "$CONFIG_FILE"
+sed -i "s/ringvercolor=.*/ringvercolor=${RINGVER_COLOR}/" "$CONFIG_FILE"
+sed -i "s/ringwrongcolor=.*/ringwrongcolor=${RINGWRONG_COLOR}/" "$CONFIG_FILE"
+sed -i "s/verifcolor=.*/verifcolor=${VERIF_COLOR}/" "$CONFIG_FILE"
+sed -i "s/timecolor=.*/timecolor=${TIME_COLOR}/" "$CONFIG_FILE"
+sed -i "s/datecolor=.*/datecolor=${DATE_COLOR}/" "$CONFIG_FILE"
+sed -i "s/loginbox=.*/loginbox=${LOGINBOX}/" "$CONFIG_FILE"
+
+echo "Lockscreen colors updated for $CURRENT_MODE mode 💋"

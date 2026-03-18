@@ -1,0 +1,113 @@
+/* ╔══════════════════════════════════════════════════════════════════════════╗
+   ║              ROFI CONFIG - HORNY MODE 🔥💦                              ║
+   ║         Warm red/maroon launcher with flirty orange accents              ║
+   ╚══════════════════════════════════════════════════════════════════════════╝ */
+
+configuration {
+    modi: "drun,run,window,ssh";
+    font: "JetBrainsMono Nerd Font 12";
+    terminal: "alacritty";
+    drun-display-format: "{name}";
+    location: 0;
+    disable-history: false;
+    hide-scrollbar: true;
+    show-icons: true;
+    icon-theme: "Papirus-Dark";
+    display-drun: "🔥 Apps";
+    display-run: "⚡ Run";
+    display-window: "🪟 Windows";
+    display-ssh: "🔐 SSH";
+}
+
+* {
+    bg: #2e0a1a;
+    bg-alt: #4e152d;
+    fg: #ffa07a;
+    fg-alt: #ff7f50;
+    primary: #ff4500;
+    secondary: #ff6347;
+    accent: #ff8c00;
+    urgent: #dc143c;
+    
+    background-color: @bg;
+    text-color: @fg;
+    border-color: @primary;
+    margin: 0;
+    padding: 0;
+    spacing: 0;
+}
+
+window {
+    width: 50%;
+    border: 3px;
+    border-radius: 12px;
+    padding: 18px;
+    background-color: @bg;
+    transparency: "real";
+}
+
+mainbox {
+    spacing: 12px;
+    padding: 18px;
+    children: [inputbar, listview];
+    background-color: transparent;
+}
+
+inputbar {
+    spacing: 8px;
+    padding: 12px;
+    border: 2px;
+    border-radius: 8px;
+    border-color: @primary;
+    background-color: @bg-alt;
+    children: [prompt, entry];
+}
+
+prompt {
+    font: "JetBrainsMono Nerd Font 14";
+    padding-right: 12px;
+    text-color: @primary;
+    background-color: transparent;
+}
+
+entry {
+    font: "JetBrainsMono Nerd Font 12";
+    placeholder: "Search for hot things...";
+    placeholder-color: @fg-alt;
+    background-color: transparent;
+    text-color: @fg;
+}
+
+listview {
+    spacing: 6px;
+    padding: 8px;
+    lines: 10;
+    columns: 1;
+    fixed-height: false;
+    background-color: transparent;
+}
+
+element {
+    padding: 10px 12px;
+    border-radius: 6px;
+    spacing: 12px;
+    background-color: @bg-alt;
+}
+
+element selected {
+    background-color: @primary;
+    text-color: @bg;
+}
+
+element selected.active {
+    background-color: @secondary;
+}
+
+element-icon {
+    size: 1.2em;
+    background-color: transparent;
+}
+
+element-text {
+    background-color: transparent;
+}

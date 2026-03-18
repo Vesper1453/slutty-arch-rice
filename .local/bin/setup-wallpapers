@@ -1,0 +1,130 @@
+#!/bin/bash
+# ╔══════════════════════════════════════════════════════════════════════════╗
+# ║              SLUTTY ARCH RICE - WALLPAPER SETUP SCRIPT 💋                ║
+# ║         Download or generate wallpapers for all modes                  ║
+# ╚══════════════════════════════════════════════════════════════════════════╝
+
+set -e
+
+DOTFILES_DIR="$HOME/dotfiles"
+THEME_DIR="$DOTFILES_DIR/themes"
+
+print_info() {
+    echo "[INFO] $1"
+}
+
+print_success() {
+    echo "[SUCCESS] $1 💋"
+}
+
+# ═══════════════════════════════════════════════════════════════════════════
+# GENERATE GRADIENT WALLPAPERS
+# ═══════════════════════════════════════════════════════════════════════════
+
+print_info "Generating gradient wallpapers..."
+
+# Check if ImageMagick is installed
+if ! command -v convert &> /dev/null; then
+    print_info "ImageMagick not found. Installing..."
+    sudo pacman -S --needed --noconfirm imagemagick 2>/dev/null || {
+        echo "Warning: Could not install ImageMagick. Skipping wallpaper generation."
+        exit 1
+    }
+fi
+
+# Create directories
+mkdir -p "$THEME_DIR/degenerate/wallpapers"
+mkdir -p "$THEME_DIR/horny/wallpapers"
+mkdir -p "$THEME_DIR/normal/wallpapers"
+
+# Generate DEGENERATE mode wallpapers
+print_info "Generating DEGENERATE mode wallpapers..."
+
+# Deep purple to hot pink gradient
+convert -size 1920x1080 "gradient:#1a0a2e-#ff1493" \
+    -pointsize 40 -fill "#ffb6c1" -gravity center \
+    -annotate +0+0 "💋 DEGENERATE MODE 💋" \
+    "$THEME_DIR/degenerate/wallpapers/degenerate-gradient-1.png" 2>/dev/null || true
+
+# Hot pink burst pattern
+convert -size 1920x1080 "radial-gradient:#ff1493-#1a0a2e" \
+    -pointsize 30 -fill "#ffffff" -gravity center \
+    -annotate +0+0 "🔥 SLUT ENERGY 🔥" \
+    "$THEME_DIR/degenerate/wallpapers/degenerate-radial.png" 2>/dev/null || true
+
+# Dark purple subtle
+convert -size 1920x1080 "gradient:#0d0518-#2d0f4e" \
+    "$THEME_DIR/degenerate/wallpapers/degenerate-dark.png" 2>/dev/null || true
+
+# Generate HORNY mode wallpapers
+print_info "Generating HORNY mode wallpapers..."
+
+# Maroon to orange gradient
+convert -size 1920x1080 "gradient:#2e0a1a-#ff4500" \
+    -pointsize 40 -fill "#ffa07a" -gravity center \
+    -annotate +0+0 "🔥 HORNY MODE 🔥" \
+    "$THEME_DIR/horny/wallpapers/horny-gradient-1.png" 2>/dev/null || true
+
+# Orange burst pattern
+convert -size 1920x1080 "radial-gradient:#ff4500-#2e0a1a" \
+    -pointsize 30 -fill "#ffffff" -gravity center \
+    -annotate +0+0 "💦 WARM ENERGY 💦" \
+    "$THEME_DIR/horny/wallpapers/horny-radial.png" 2>/dev/null || true
+
+# Dark maroon subtle
+convert -size 1920x1080 "gradient:#1a0510-#4e152d" \
+    "$THEME_DIR/horny/wallpapers/horny-dark.png" 2>/dev/null || true
+
+# Generate NORMAL mode wallpapers
+print_info "Generating NORMAL mode wallpapers..."
+
+# Dark blue-gray to light blue gradient
+convert -size 1920x1080 "gradient:#1e1e2e-#89b4fa" \
+    -pointsize 40 -fill "#cdd6f4" -gravity center \
+    -annotate +0+0 "💼 NORMAL MODE 💼" \
+    "$THEME_DIR/normal/wallpapers/normal-gradient-1.png" 2>/dev/null || true
+
+# Blue burst pattern
+convert -size 1920x1080 "radial-gradient:#89b4fa-#1e1e2e" \
+    -pointsize 30 -fill "#ffffff" -gravity center \
+    -annotate +0+0 "✨ CLEAN ENERGY ✨" \
+    "$THEME_DIR/normal/wallpapers/normal-radial.png" 2>/dev/null || true
+
+# Dark blue subtle
+convert -size 1920x1080 "gradient:#11111b-#313244" \
+    "$THEME_DIR/normal/wallpapers/normal-dark.png" 2>/dev/null || true
+
+# Blue abstract
+convert -size 1920x1080 "gradient:#1e1e2e-#cba6f7" \
+    "$THEME_DIR/normal/wallpapers/normal-purple.png" 2>/dev/null || true
+
+print_success "Wallpapers generated!"
+
+# ═══════════════════════════════════════════════════════════════════════════
+# DOWNLOAD SAMPLE WALLPAPERS (optional)
+# ═══════════════════════════════════════════════════════════════════════════
+
+cat << 'EOF'
+
+╔══════════════════════════════════════════════════════════════════════════╗
+║                                                                          ║
+║                    WALLPAPER SETUP COMPLETE! 💋                          ║
+║                                                                          ║
+╠══════════════════════════════════════════════════════════════════════════╣
+║                                                                          ║
+║  Generated gradient wallpapers for all three modes:                    ║
+║                                                                          ║
+║  • degenerate/wallpapers/  💋 Purple-to-pink gradients                  ║
+║  • horny/wallpapers/       🔥 Maroon-to-orange gradients                 ║
+║  • normal/wallpapers/      💼 Blue-gray gradients                        ║
+║                                                                          ║
+║  Add your own images to these directories:                               ║
+║    ~/dotfiles/themes/*/wallpapers/                                       ║
+║                                                                          ║
+║  Supported formats: jpg, png, jpeg, webp                                   ║
+║                                                                          ║
+║  Switch modes to automatically select a random wallpaper!                ║
+║                                                                          ║
+╚══════════════════════════════════════════════════════════════════════════╝
+
+EOF

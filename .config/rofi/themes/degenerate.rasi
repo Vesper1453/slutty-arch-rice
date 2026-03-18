@@ -1,0 +1,175 @@
+/* ╔══════════════════════════════════════════════════════════════════════════╗
+   ║         ROFI THEME - DEGENERATE BOOKMARKS MENU 💋🔥                       ║
+   ║         Hot pink, slutty, pornographic menu for adult sites             ║
+   ╚══════════════════════════════════════════════════════════════════════════╝ */
+
+* {
+    background:     #1a0a2e;
+    background-alt: #2d0f4e;
+    foreground:     #ffb6c1;
+    primary:        #ff1493;
+    secondary:      #ff0066;
+    urgent:         #ff0000;
+    bg-transparent: #1a0a2eCC;
+}
+
+window {
+    width: 50%;
+    height: 70%;
+    transparency: "real";
+    background-color: @bg-transparent;
+    border: 3px solid;
+    border-color: @primary;
+    border-radius: 15px;
+    padding: 25px;
+    location: center;
+    anchor: center;
+}
+
+mainbox {
+    spacing: 15px;
+    padding: 20px;
+    background-color: transparent;
+    children: [inputbar, listview, mode-switcher];
+}
+
+inputbar {
+    spacing: 15px;
+    padding: 15px;
+    background-color: @background-alt;
+    border: 2px solid;
+    border-color: @secondary;
+    border-radius: 12px;
+    children: [prompt, textbox-prompt-colon, entry];
+}
+
+prompt {
+    font: "JetBrainsMono Nerd Font Bold 14";
+    color: @primary;
+    background-color: transparent;
+    padding: 5px 10px;
+}
+
+textbox-prompt-colon {
+    font: "JetBrainsMono Nerd Font 14";
+    color: @secondary;
+    background-color: transparent;
+    expand: false;
+    str: "💋";
+    padding: 5px;
+}
+
+entry {
+    font: "JetBrainsMono Nerd Font 14";
+    color: @foreground;
+    background-color: @background;
+    border: 2px solid;
+    border-color: @secondary;
+    border-radius: 8px;
+    padding: 10px;
+    placeholder: "Type to search your sins... 🔥";
+    placeholder-color: @secondary;
+}
+
+listview {
+    spacing: 8px;
+    padding: 10px;
+    background-color: transparent;
+    lines: 12;
+    columns: 1;
+    fixed-height: true;
+    dynamic: true;
+    scrollbar: true;
+}
+
+scrollbar {
+    background-color: @background-alt;
+    border: 0px;
+    width: 8px;
+    padding: 0px;
+    handle-width: 8px;
+    handle-color: @primary;
+    border-radius: 4px;
+}
+
+element {
+    font: "JetBrainsMono Nerd Font 13";
+    spacing: 15px;
+    padding: 12px 15px;
+    background-color: @background;
+    border: 1px solid;
+    border-color: @background-alt;
+    border-radius: 10px;
+    text-color: @foreground;
+}
+
+element normal.normal {
+    background-color: @background;
+    text-color: @foreground;
+}
+
+element selected.normal {
+    background-color: @primary;
+    text-color: @background;
+    border-color: @secondary;
+    border: 2px solid;
+}
+
+element selected.active {
+    background-color: @secondary;
+    text-color: @background;
+}
+
+element urgent.normal {
+    background-color: @urgent;
+    text-color: @background;
+}
+
+element-icon {
+    size: 1.5em;
+    background-color: transparent;
+}
+
+element-text {
+    background-color: transparent;
+    text-color: inherit;
+}
+
+message {
+    background-color: @background-alt;
+    border: 2px solid;
+    border-color: @secondary;
+    border-radius: 8px;
+    padding: 12px;
+    margin: 0px 0px 10px 0px;
+}
+
+textbox {
+    font: "JetBrainsMono Nerd Font 12";
+    color: @primary;
+    background-color: transparent;
+    horizontal-align: 0.5;
+}
+
+mode-switcher {
+    spacing: 10px;
+    background-color: transparent;
+    padding: 5px;
+}
+
+button {
+    font: "JetBrainsMono Nerd Font 12";
+    padding: 10px;
+    background-color: @background-alt;
+    text-color: @foreground;
+    border: 1px solid;
+    border-color: @primary;
+    border-radius: 8px;
+    horizontal-align: 0.5;
+}
+
+button selected {
+    background-color: @primary;
+    text-color: @background;
+    border-color: @secondary;
+}

@@ -1,0 +1,260 @@
+#!/bin/bash
+# ╔══════════════════════════════════════════════════════════════════════════╗
+# ║          🔥 PRIVACY WIPE - Deep Clean All Traces 💋                     ║
+# ║    Nuclear option for removing all evidence of degeneracy                ║
+# ╚══════════════════════════════════════════════════════════════════════════╝
+
+# Colors
+PINK='\033[38;5;205m'
+PURPLE='\033[38;5;141m'
+GREEN='\033[38;5;82m'
+RED='\033[38;5;196m'
+YELLOW='\033[38;5;226m'
+RESET='\033[0m'
+
+show_banner() {
+    echo -e "${RED}"
+    cat << 'EOF'
+    ____  _       _ _     __          __    _ _      _       
+   / __ \| |     | (_)    \ \        / /   | | |    (_)      
+  | |  | | | __ _| |_  ___ \ \  /\  / /  __| | | ___ _ _ __  
+  | |  | | |/ _` | | |/ _ \ \ \/  \/ /  / _` | |/ _ \ | '_ \ 
+  | |__| | | (_| | | |  __/  \  /\  /  | (_| | |  __/ | |_) |
+   \____/|_|\__,_|_|_|\___|   \/  \/    \__,_|_|\___| | .__/ 
+                                                    | |    
+                                                    |_|    
+     💋 NUCLEAR OPTION - ERASE EVERYTHING 💋
+EOF
+    echo -e "${RESET}"
+}
+
+show_warning() {
+    echo -e "${RED}⚠️  WARNING: This will permanently delete data!${RESET}"
+    echo ""
+    echo "This script will:"
+    echo "  • Clear ALL browser history"
+    echo "  • Clear clipboard"
+    echo "  • Clear recent files"
+    echo "  • Clear shell history (porn-related)"
+    echo "  • Clear thumbnail cache"
+    echo "  • Clear system logs"
+    echo "  • Optionally: Secure-delete sensitive files"
+    echo ""
+    echo -e "${YELLOW}This action cannot be undone!${RESET}"
+    echo ""
+}
+
+confirm() {
+    read -p "Are you sure? Type 'NUCLEAR' to confirm: " confirm
+    if [[ "$confirm" != "NUCLEAR" ]]; then
+        echo -e "${GREEN}Aborted.${RESET}"
+        exit 0
+    fi
+}
+
+# Clear browser history
+clear_browsers() {
+    echo -e "${PINK}🧹 Clearing browser history...${RESET}"
+    
+    # Firefox
+    if [[ -d "$HOME/.mozilla/firefox" ]]; then
+        find "$HOME/.mozilla/firefox" -name "places.sqlite" -exec rm -f {} \; 2>/dev/null
+        find "$HOME/.mozilla/firefox" -name "cookies.sqlite" -exec rm -f {} \; 2>/dev/null
+        find "$HOME/.mozilla/firefox" -name "formhistory.sqlite" -exec rm -f {} \; 2>/dev/null
+        echo -e "${GREEN}  ✓ Firefox cleared${RESET}"
+    fi
+    
+    # Chrome/Chromium
+    for browser in "$HOME/.config/google-chrome" "$HOME/.config/chromium" "$HOME/.config/BraveSoftware"; do
+        if [[ -d "$browser" ]]; then
+            find "$browser" -name "History" -exec rm -f {} \; 2>/dev/null
+            find "$browser" -name "Cookies" -exec rm -f {} \; 2>/dev/null
+            find "$browser" -name "Login Data" -exec rm -f {} \; 2>/dev/null
+            find "$browser" -name "Media History" -exec rm -f {} \; 2>/dev/null
+        fi
+    done
+    echo -e "${GREEN}  ✓ Chrome/Chromium/Brave cleared${RESET}"
+    
+    # Qutebrowser
+    if [[ -d "$HOME/.local/share/qutebrowser" ]]; then
+        rm -f "$HOME/.local/share/qutebrowser/history.sqlite" 2>/dev/null
+        echo -e "${GREEN}  ✓ Qutebrowser cleared${RESET}"
+    fi
+    
+    # Epiphany
+    if [[ -d "$HOME/.local/share/epiphany" ]]; then
+        rm -rf "$HOME/.local/share/epiphany"/* 2>/dev/null
+        echo -e "${GREEN}  ✓ Epiphany cleared${RESET}"
+    fi
+}
+
+# Clear clipboard
+clear_clipboard() {
+    echo -e "${PINK}📋 Clearing clipboard...${RESET}"
+    
+    # X11 clipboard
+    if command -v xclip &> /dev/null; then
+        echo "" | xclip -selection clipboard 2>/dev/null
+        echo "" | xclip -selection primary 2>/dev/null
+        echo "" | xclip -selection secondary 2>/dev/null
+    fi
+    
+    # wl-clipboard for Wayland
+    if command -v wl-copy &> /dev/null; then
+        wl-copy --clear 2>/dev/null || true
+    fi
+    
+    echo -e "${GREEN}  ✓ Clipboard cleared${RESET}"
+}
+
+# Clear recent files
+clear_recent() {
+    echo -e "${PINK}📄 Clearing recent files...${RESET}"
+    
+    # GTK recent files
+    rm -f "$HOME/.local/share/recently-used.xbel" 2>/dev/null
+    rm -f "$HOME/.local/share/recently-used.xbel.*" 2>/dev/null
+    
+    # KDE recent files
+    rm -rf "$HOME/.local/share/RecentDocuments" 2>/dev/null
+    
+    # Thumbnail cache
+    rm -rf "$HOME/.cache/thumbnails"/* 2>/dev/null
+    
+    # Nautilus/Files recent
+    rm -f "$HOME/.local/share/gvfs-metadata"/* 2>/dev/null
+    
+    echo -e "${GREEN}  ✓ Recent files cleared${RESET}"
+}
+
+# Clear shell history
+clear_shell_history() {
+    echo -e "${PINK}💻 Clearing shell history...${RESET}"
+    
+    # Bash history
+    if [[ -f "$HOME/.bash_history" ]]; then
+        # Filter out porn-related commands
+        grep -v -i -E "(porn|xxx|slut|whore|cum|degenerate|hentai|stash|switch-mode degenerate|switch-mode horny|xvideos|pornhub|chaturbate)" "$HOME/.bash_history" > "$HOME/.bash_history.tmp" 2>/dev/null
+        mv "$HOME/.bash_history.tmp" "$HOME/.bash_history" 2>/dev/null
+        history -c 2>/dev/null || true
+    fi
+    
+    # Zsh history
+    if [[ -f "$HOME/.zsh_history" ]]; then
+        grep -v -i -E "(porn|xxx|slut|whore|cum|degenerate|hentai|stash|switch-mode degenerate|switch-mode horny|xvideos|pornhub|chaturbate)" "$HOME/.zsh_history" > "$HOME/.zsh_history.tmp" 2>/dev/null
+        mv "$HOME/.zsh_history.tmp" "$HOME/.zsh_history" 2>/dev/null
+    fi
+    
+    # Fish history
+    if [[ -d "$HOME/.local/share/fish" ]]; then
+        rm -f "$HOME/.local/share/fish/fish_history" 2>/dev/null
+    fi
+    
+    echo -e "${GREEN}  ✓ Shell history sanitized${RESET}"
+}
+
+# Clear system caches
+clear_caches() {
+    echo -e "${PINK}🗑️ Clearing system caches...${RESET}"
+    
+    # Clear ~/.cache
+    rm -rf "$HOME/.cache/mozilla"/* 2>/dev/null
+    rm -rf "$HOME/.cache/chromium"/* 2>/dev/null
+    rm -rf "$HOME/.cache/google-chrome"/* 2>/dev/null
+    rm -rf "$HOME/.cache/vlc"/* 2>/dev/null
+    rm -rf "$HOME/.cache/mpv"/* 2>/dev/null
+    
+    # Clear tmp files
+    rm -rf "/tmp/mpv"* 2>/dev/null
+    
+    # Clear systemd journal for user
+    if command -v journalctl &> /dev/null; then
+        journalctl --user --vacuum-time=1s 2>/dev/null || true
+    fi
+    
+    echo -e "${GREEN}  ✓ System caches cleared${RESET}"
+}
+
+# Secure delete option
+secure_delete_files() {
+    local dir="$1"
+    
+    echo -e "${PINK}🔒 Secure deleting files in:${RESET} $dir"
+    
+    if command -v shred &> /dev/null; then
+        find "$dir" -type f -exec shred -vfz -n 3 {} \; 2>/dev/null
+        echo -e "${GREEN}  ✓ Files securely wiped${RESET}"
+    elif command -v srm &> /dev/null; then
+        find "$dir" -type f -exec srm -rv {} \; 2>/dev/null
+        echo -e "${GREEN}  ✓ Files securely wiped (srm)${RESET}"
+    else
+        echo -e "${YELLOW}  ⚠ shred/srm not found, using rm${RESET}"
+        rm -rf "$dir"/* 2>/dev/null
+    fi
+}
+
+# Main
+main() {
+    show_banner
+    show_warning
+    
+    # Check for special options
+    local secure_wipe=false
+    local wipe_dir=""
+    
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --secure-wipe)
+                secure_wipe=true
+                shift
+                ;;
+            --wipe-dir)
+                wipe_dir="$2"
+                shift 2
+                ;;
+            -h|--help)
+                echo "Usage: privacy-wipe [OPTIONS]"
+                echo ""
+                echo "Options:"
+                echo "  --secure-wipe    Use secure deletion (slower)"
+                echo "  --wipe-dir DIR   Secure wipe specific directory"
+                echo "  -h, --help       Show this help"
+                exit 0
+                ;;
+            *)
+                shift
+                ;;
+        esac
+    done
+    
+    confirm
+    
+    echo ""
+    echo -e "${PINK}💋 Beginning nuclear cleanup...${RESET}"
+    echo ""
+    
+    clear_browsers
+    clear_clipboard
+    clear_recent
+    clear_shell_history
+    clear_caches
+    
+    # Secure wipe if requested
+    if [[ "$secure_wipe" == "true" && -n "$wipe_dir" ]]; then
+        secure_delete_files "$wipe_dir"
+    fi
+    
+    echo ""
+    echo -e "${GREEN}✓ PRIVACY WIPE COMPLETE!${RESET}"
+    echo -e "${PINK}💋 All traces of degeneracy have been erased! 💋${RESET}"
+    echo ""
+    echo -e "${YELLOW}Remember:${RESET}"
+    echo "  • Switch to NORMAL mode before anyone sees"
+    echo "  • Your secret is safe with this script"
+    echo "  • Use panic-button (Mod+Shift+Escape) for instant mode switch"
+    
+    # Log the wipe (for your own records)
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] PRIVACY WIPE EXECUTED" >> "$HOME/.privacy-wipe-log" 2>/dev/null || true
+}
+
+main "$@"

@@ -1,0 +1,137 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# GITIGNORE - SLUTTY ARCH RICE
+# ═══════════════════════════════════════════════════════════════════════════
+
+# NEVER include actual porn content
+*.mp4
+*.mkv
+*.avi
+*.mov
+*.webm
+*.flv
+*.wmv
+*.m4v
+
+# NEVER include images (wallpapers are ok, but no actual porn pics)
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.bmp
+*.webp
+*.tiff
+*.ico
+
+# Exception: Theme wallpapers (these are generic, not actual porn)
+!themes/*/wallpapers/.gitkeep
+
+# NEVER include personal data
+*.key
+*.pem
+*.p12
+*.crt
+*.cer
+*.der
+*.priv
+*.secret
+.env
+.env.local
+.env.*.local
+
+# NEVER include passwords or tokens
+*password*
+*passwd*
+*token*
+*secret*
+*credential*
+*.netrc
+
+# NEVER include browser data (could contain personal info)
+.mozilla/
+.chrome/
+.chromium/
+BraveSoftware/
+.qutebrowser/bookmarks
+.qutebrowser/history
+
+# NEVER include cache and temp files
+.cache/
+tmp/
+temp/
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+*.bak
+*.backup
+
+# NEVER include logs (might contain sensitive URLs)
+*.log
+logs/
+log/
+.panic-log
+.privacy-wipe-log
+
+# NEVER include download history
+downloads/
+*.aria2
+*.crdownload
+
+# NEVER include personal counters (this is private! 🥛)
+.cum-count
+.cum-count.bak
+
+# NEVER include system files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# NEVER include package manager files that shouldn't be shared
+node_modules/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+
+# NEVER include build artifacts
+dist/
+build/
+*.o
+*.so
+*.a
+
+# NEVER include editor files
+.vscode/
+.idea/
+*.sublime-*
+
+# NEVER include git itself (obviously)
+.git/
+
+# ═══════════════════════════════════════════════════════════════════════════
+# FILES TO INCLUDE (despite patterns above)
+# ═══════════════════════════════════════════════════════════════════════════
+
+# Config files are OK (they don't contain actual porn)
+!.config/
+!.local/bin/
+!themes/
+
+# Documentation is OK
+!*.md
+
+# Scripts are OK
+!*.sh
+
+# Source configs are OK
+!*.conf
+!*.ini
+!*.rasi
+!*.yml
+!*.yaml
+!*.toml
+
+# Fonts and icons that are part of the theme
+!*.ttf
+!*.otf

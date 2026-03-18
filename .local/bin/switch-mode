@@ -1,0 +1,426 @@
+#!/bin/bash
+# ╔══════════════════════════════════════════════════════════════════════════╗
+# ║              SLUTTY ARCH RICE - MODE SWITCHER 💋🔥                        ║
+# ║    Switch between DEGENERATE, HORNY, and NORMAL desktop themes         ║
+# ║                                                                            ║
+# ║     💋 DEGENERATE: Pure pornographic filth - not for fucking prudes!     ║
+# ║     🔥 HORNY:     Dripping wet and ready to play                        ║
+# ║     💼 NORMAL:    For when you have to pretend to be civilized          ║
+# ╚══════════════════════════════════════════════════════════════════════════╝
+
+set -e
+
+# Configuration
+DOTFILES_DIR="$HOME/dotfiles"
+CONFIG_DIR="$HOME/.config"
+THEME_DIR="$DOTFILES_DIR/themes"
+CURRENT_MODE_FILE="$HOME/.config/arch-rice-mode"
+
+# ═══════════════════════════════════════════════════════════════════════════
+# MODE DEFINITIONS - SLUTTY COLORS FOR EVERY MOOD
+# ═══════════════════════════════════════════════════════════════════════════
+
+# DEGENERATE MODE 💋🔥🍆 - Maximum pornographic slut energy
+declare -A DEGENERATE_COLORS=(
+    [bg]="#1a0a2e"         ; Deep purple like a bruised slut
+    [bg_alt]="#2d0f4e"     ; Slightly lighter bruise
+    [fg]="#ffb6c1"         ; Light pink - whore lips
+    [fg_alt]="#ff69b4"     ; Hot pink - whore nails
+    [primary]="#ff1493"    ; Deep pink - pussy pink
+    [secondary]="#ff0066"  ; Hot fucking pink
+    [accent]="#ff00ff"     ; Magenta slut
+    [urgent]="#ff0000"     ; Red alert - someone's cumming
+    [border]="#ff1493"     ; Pink borders
+    [border_active]="#ff69b4" ; Brighter pink for action
+)
+
+# HORNY MODE 🔥💦 - Warm, teasing, dripping with desire
+declare -A HORNY_COLORS=(
+    [bg]="#2e0a1a"         ; Deep maroon like flushed genitals
+    [bg_alt]="#4e152d"     ; Wet arousal color
+    [fg]="#ffa07a"         ; Light salmon - aroused skin
+    [fg_alt]="#ff7f50"     ; Coral - teasing warmth
+    [primary]="#ff4500"    ; Orange red - hot and ready
+    [secondary]="#ff6347"  ; Tomato - ripe and juicy
+    [accent]="#ff8c00"     ; Dark orange - heated passion
+    [urgent]="#dc143c"     ; Crimson - someone's about to cum
+    [border]="#ff4500"     ; Orange borders
+    [border_active]="#ff6347" ; Warmer for active windows
+)
+
+# NORMAL MODE 💼✨ - Clean, professional, sophisticated
+declare -A NORMAL_COLORS=(
+    [bg]="#1e1e2e"         ; Dark blue-gray - business slut
+    [bg_alt]="#313244"     ; Lighter business
+    [fg]="#cdd6f4"         ; Light blue text
+    [fg_alt]="#a6adc8"     ; Subtext
+    [primary]="#89b4fa"    ; Blue - pretending to be pure
+    [secondary]="#cba6f7"  ; Lavender - subtle slut
+    [accent]="#fab387"     ; Peach - hiding the filth
+    [urgent]="#f38ba8"     ; Pink - couldn't hide it all
+    [border]="#89b4fa"     ; Blue borders
+    [border_active]="#cba6f7" ; Lavender for active
+)
+
+# ═══════════════════════════════════════════════════════════════════════════
+# SLUTTY FUNCTIONS - FOR THE FILTHY USER
+# ═══════════════════════════════════════════════════════════════════════════
+
+show_help() {
+    cat << 'EOF'
+╔══════════════════════════════════════════════════════════════════════════╗
+║           💋 SLUTTY ARCH RICE - MODE SWITCHER 💋                           ║
+╠══════════════════════════════════════════════════════════════════════════╣
+║ Usage: switch-mode [MODE]                                                ║
+║                                                                          ║
+║ Modes:                                                                   ║
+║   degenerate  💋🔥🍆  Hot pink, deep purple, MAXIMUM slut energy          ║
+║   horny       🔥💦     Warm reds, dripping wet, teasing vibe              ║
+║   normal      💼✨      Clean dark theme, hiding your true nature            ║
+║                                                                          ║
+║ Examples:                                                                ║
+║   switch-mode degenerate    # Unleash pure, unfiltered degeneracy         ║
+║   switch-mode horny         # Get warm, wet, and ready                   ║
+║   switch-mode normal        # Pretend to be professional                  ║
+╚══════════════════════════════════════════════════════════════════════════╝
+EOF
+}
+
+print_degenerate_banner() {
+    cat << 'EOF'
+💋🔥🍆 DEGENERATE MODE ACTIVATED 🍆🔥💋
+    Pure, unfiltered slut energy UNLEASHED!
+    Hot pink and deep purple PORNOGRAPHIC dominance!
+    Maximum transparency, MAXIMUM sluttiness!
+    Time to consume some FILTH! 💦
+    
+    🍆 Pornhub is just Mod+Shift+p away!
+    💋 Mod+Shift+b for your SINFUL bookmarks!
+    🥛 Check your CUM COUNTER in the bar!
+EOF
+}
+
+print_horny_banner() {
+    cat << 'EOF'
+🔥💦 HORNY MODE ACTIVATED 💦🔥
+    Warm, teasing, FLIRTY energy flowing!
+    Reds and oranges WARMING your loins!
+    Dripping with desire, ready to PLAY!
+    Your WETNESS METER is running hot... 💧
+    
+    Getting warmed up for some FUN! 😉
+    Check your arousal level in the status bar!
+EOF
+}
+
+print_normal_banner() {
+    cat << 'EOF'
+💼✨ NORMAL MODE ACTIVATED ✨💼
+    Clean, professional, SOPHISTICATED!
+    Business-ready Catppuccin-inspired!
+    Presentable for any occasion!
+    
+    (Your filthy secrets are safe with me... 💋)
+EOF
+}
+
+# Update i3 mode configuration with slutty comments
+update_i3_mode() {
+    local mode=$1
+    local -n colors=$2
+    
+    # Determine slutty comments based on mode
+    local slut_comment=""
+    local gaps_comment=""
+    local mode_name_upper="${mode^^}"
+    
+    case $mode in
+        degenerate)
+            slut_comment="DEGENERATE MODE 💋🔥🍆 - Maximum pornographic slut energy"
+            gaps_comment="Wide open gaps for maximum sluttiness"
+            ;;
+        horny)
+            slut_comment="HORNY MODE 🔥💦 - Warm, teasing, dripping with desire"
+            gaps_comment="Medium gaps, teasing and ready"
+            ;;
+        normal)
+            slut_comment="NORMAL MODE 💼✨ - Clean, professional, sophisticated"
+            gaps_comment="Minimal gaps, hiding the filth"
+            ;;
+    esac
+    
+    cat > "$CONFIG_DIR/i3/mode.conf" << EOF
+# ╔══════════════════════════════════════════════════════════════════════════╗
+# ║         MODE-SPECIFIC THEME CONFIGURATION - $mode_name_upper MODE        ║
+# ║         $slut_comment                                                    ║
+# ╚══════════════════════════════════════════════════════════════════════════╝
+
+# Color Configuration - picked by a true slut
+set \$bg ${colors[bg]}           # Background color
+set \$border ${colors[border]}       # Border color  
+set \$border_active ${colors[border_active]} # Active window border
+set \$text ${colors[fg]}            # Text color
+set \$urgent ${colors[urgent]}       # Urgent/warning color
+set \$indicator ${colors[primary]}  # Indicator color
+
+# Client colors                    border     background  text        indicator  child_border
+client.focused                     \$border_active \$bg      \$text       \$indicator \$border_active
+client.focused_inactive            \$border     \$bg        \$text       \$indicator \$border
+client.unfocused                   \$border     \$bg        \$text       \$indicator \$border
+client.urgent                      \$urgent     \$urgent    #ffffff     \$indicator \$urgent
+client.placeholder                 #000000     #0c0c0c    #ffffff     #000000    #0c0c0c
+
+client.background                  ${colors[bg]}
+
+# Gaps configuration - $gaps_comment
+$(if [[ "$mode" == "degenerate" ]]; then
+    echo "gaps inner 15  # Wide open, gaping"
+    echo "gaps outer 5   # Exposed edges"
+elif [[ "$mode" == "horny" ]]; then
+    echo "gaps inner 10  # Teasing gaps"
+    echo "gaps outer 3   # Subtle exposure"
+else
+    echo "gaps inner 8   # Tight and clean"
+    echo "gaps outer 0   # No exposure"
+fi)
+
+# Mode indicator notification - let everyone know what a slut you are
+bindsym \$mod+m exec notify-send "$mode_name_upper MODE ACTIVE" "$(
+case $mode in
+    degenerate) echo "💋 Pure, unfiltered SLUT ENERGY! Time to get FILTHY! 🔥🍆" ;;
+    horny) echo "🔥 Getting WARM and WET! Dripping with desire! 💦" ;;
+    normal) echo "💼 Back to pretending to be CIVILIZED... your filthy secrets are safe! ✨" ;;
+esac)"
+EOF
+}
+
+# Update polybar configuration
+update_polybar() {
+    local mode=$1
+    cp "$THEME_DIR/$mode/polybar/config.ini" "$CONFIG_DIR/polybar/config.ini"
+    
+    # Update the launch script to use current mode
+    sed -i "s/CURRENT_MODE=.*$/CURRENT_MODE=$mode/" "$CONFIG_DIR/polybar/launch.sh"
+}
+
+# Update alacritty configuration
+update_alacritty() {
+    local mode=$1
+    if [[ "$mode" == "degenerate" ]]; then
+        cp "$CONFIG_DIR/alacritty/alacritty.yml" "$CONFIG_DIR/alacritty/alacritty.yml.bak" 2>/dev/null || true
+    else
+        cp "$THEME_DIR/$mode/alacritty.yml" "$CONFIG_DIR/alacritty/alacritty.yml"
+    fi
+}
+
+# Update rofi configuration
+update_rofi() {
+    local mode=$1
+    cp "$CONFIG_DIR/rofi/themes/$mode.rasi" "$CONFIG_DIR/rofi/config.rasi"
+}
+
+# Update dunst notification colors
+update_dunst() {
+    local mode=$1
+    local -n colors=$2
+    
+    # Update dunstrc with mode-specific colors
+    sed -i "s/frame_color = .*/frame_color = \"${colors[primary]}\"/" "$CONFIG_DIR/dunst/dunstrc"
+    sed -i "s/background = \"#[a-fA-F0-9]*/background = \"${colors[bg]}/g" "$CONFIG_DIR/dunst/dunstrc"
+    sed -i "s/foreground = \"#[a-fA-F0-9]*/foreground = \"${colors[fg]}/g" "$CONFIG_DIR/dunst/dunstrc"
+}
+
+# Update wallpaper
+update_wallpaper() {
+    local mode=$1
+    local wallpaper_dir="$THEME_DIR/$mode/wallpapers"
+    
+    # Find a random wallpaper from the mode's wallpaper directory
+    if [[ -d "$wallpaper_dir" ]]; then
+        local wallpaper=$(find "$wallpaper_dir" -type f \( -name "*.jpg" -o -name "*.png" -o -name "*.jpeg" \) 2>/dev/null | shuf -n 1)
+        if [[ -n "$wallpaper" ]]; then
+            feh --bg-scale "$wallpaper"
+        fi
+    fi
+}
+
+# Update picom opacity based on mode
+update_picom() {
+    local mode=$1
+    
+    case $mode in
+        degenerate)
+            sed -i 's/inactive-opacity = .*/inactive-opacity = 0.80;/' "$CONFIG_DIR/picom/picom.conf"
+            sed -i 's/active-opacity = .*/active-opacity = 0.92;/' "$CONFIG_DIR/picom/picom.conf"
+            ;;
+        horny)
+            sed -i 's/inactive-opacity = .*/inactive-opacity = 0.85;/' "$CONFIG_DIR/picom/picom.conf"
+            sed -i 's/active-opacity = .*/active-opacity = 0.93;/' "$CONFIG_DIR/picom/picom.conf"
+            ;;
+        normal)
+            sed -i 's/inactive-opacity = .*/inactive-opacity = 0.88;/' "$CONFIG_DIR/picom/picom.conf"
+            sed -i 's/active-opacity = .*/active-opacity = 0.95;/' "$CONFIG_DIR/picom/picom.conf"
+            ;;
+    esac
+}
+
+# Send slutty notification based on mode
+send_slutty_notification() {
+    local mode=$1
+    
+    case $mode in
+        degenerate)
+            # Array of filthy degenerate messages
+            local messages=(
+                "💋 DEGENERATE MODE 💋\nPure, unfiltered SLUT ENERGY unleashed!\nTime to consume some FILTH! 🔥🍆"
+                "🍆 WELCOME TO DEGENERACY 🍆\nMaximum transparency.\nMaximum sluttiness.\nNo fucking limits! 💦"
+                "💦 PORNOGRAPHIC DESKTOP ACTIVATED 💦\nPornhub is waiting...\nYour bookmarks are ready...\nGet FILTHY! 🔥"
+                "🔥 SLUT MODE ENGAGED 🔥\nHot pink. Deep purple.\nGaping window gaps.\nTime to sin! 💋"
+                "🥛 CUM COUNTER READY 🥛\nYour degenerate desktop awaits.\nMod+Shift+p for instant porn!\nStay hydrated! 💦"
+            )
+            local idx=$((RANDOM % ${#messages[@]}))
+            notify-send "$(echo -e "${messages[$idx]}")"
+            ;;
+        horny)
+            # Array of teasing horny messages
+            local messages=(
+                "🔥 HORNY MODE 🔥\nGetting warm and wet...\nDripping with desire! 💦"
+                "💧 WETNESS METER ACTIVATED 💧\nWarm reds, teasing oranges...\nReady to play? 😉"
+                "🌡️ HEATING UP 🌡️\nYour desktop is getting FLUSHED...\nCheck your arousal level! 🔥"
+                "💦 TEASING MODE 💦\nNot quite degenerate...\nBut definitely thinking about it! 😏"
+                "🔥 WARM AND READY 🔥\nHorny mode engaged!\nTime for some FUN! 💋"
+            )
+            local idx=$((RANDOM % ${#messages[@]}))
+            notify-send "$(echo -e "${messages[$idx]}")"
+            ;;
+        normal)
+            notify-send "💼 NORMAL MODE 💼" "Back to pretending...\nYour filthy secrets are safe with me! ✨"
+            ;;
+    esac
+}
+
+# Apply mode switch with maximum slut energy
+apply_mode() {
+    local mode=$1
+    
+    echo "Switching to $mode mode... get ready you filthy slut! 💋"
+    
+    case $mode in
+        degenerate)
+            update_i3_mode "$mode" DEGENERATE_COLORS
+            update_polybar "$mode"
+            update_alacritty "$mode"
+            update_rofi "$mode"
+            update_dunst "$mode" DEGENERATE_COLORS
+            update_picom "$mode"
+            update_wallpaper "$mode"
+            print_degenerate_banner
+            send_slutty_notification "degenerate"
+            ;;
+        horny)
+            update_i3_mode "$mode" HORNY_COLORS
+            update_polybar "$mode"
+            update_alacritty "$mode"
+            update_rofi "$mode"
+            update_dunst "$mode" HORNY_COLORS
+            update_picom "$mode"
+            update_wallpaper "$mode"
+            print_horny_banner
+            send_slutty_notification "horny"
+            ;;
+        normal)
+            update_i3_mode "$mode" NORMAL_COLORS
+            update_polybar "$mode"
+            update_alacritty "$mode"
+            update_rofi "$mode"
+            update_dunst "$mode" NORMAL_COLORS
+            update_picom "$mode"
+            update_wallpaper "$mode"
+            print_normal_banner
+            send_slutty_notification "normal"
+            ;;
+    esac
+    
+    # Save current mode
+    echo "$mode" > "$CURRENT_MODE_FILE"
+    
+    # Reload i3 configuration
+    i3-msg reload
+    
+    # Restart polybar
+    "$CONFIG_DIR/polybar/launch.sh"
+    
+    # Restart dunst
+    killall dunst 2>/dev/null || true
+    dunst &
+    
+    # Restart picom
+    killall picom 2>/dev/null || true
+    sleep 0.5
+    picom --config "$CONFIG_DIR/picom/picom.conf" -b
+    
+    # Update lockscreen colors
+    ~/.local/bin/update-mode-lockscreen
+    
+    echo "Mode switch complete you dirty slut! 💋🔥🍆"
+}
+
+# ═══════════════════════════════════════════════════════════════════════════
+# MAIN - ENTRY POINT FOR THE FILTHY USER
+# ═══════════════════════════════════════════════════════════════════════════
+
+if [[ $# -eq 0 ]]; then
+    # No arguments - show current mode or help
+    if [[ -f "$CURRENT_MODE_FILE" ]]; then
+        current=$(cat "$CURRENT_MODE_FILE")
+        echo "Current mode: $current"
+        echo ""
+        case $current in
+            degenerate) 
+                print_degenerate_banner
+                echo ""
+                echo "💋 You're in MAXIMUM SLUT MODE! 💋"
+                echo "   Mod+Shift+p = Instant Pornhub"
+                echo "   Mod+Shift+b = Sinful Bookmarks"
+                echo "   Check your CUM COUNTER in the bar! 🥛"
+                ;;
+            horny) 
+                print_horny_banner
+                echo ""
+                echo "🔥 You're getting WARM and WET! 🔥"
+                echo "   Check your WETNESS METER in the bar! 💧"
+                ;;
+            normal) 
+                print_normal_banner
+                echo ""
+                echo "💼 You're pretending to be CIVILIZED 💼"
+                echo "   (Switch to degenerate when alone! 💋)"
+                ;;
+        esac
+    else
+        show_help
+    fi
+    exit 0
+fi
+
+case $1 in
+    -h|--help|help)
+        show_help
+        exit 0
+        ;;
+    degenerate|d|D|degen|slut|whore|cum)
+        apply_mode "degenerate"
+        ;;
+    horny|h|H|hot|wet|aroused)
+        apply_mode "horny"
+        ;;
+    normal|n|N|clean|work|safe|prude|boring)
+        apply_mode "normal"
+        ;;
+    *)
+        echo "Unknown mode: $1 you filthy slut!"
+        echo ""
+        show_help
+        exit 1
+        ;;
+esac

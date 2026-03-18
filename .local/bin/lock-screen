@@ -1,0 +1,65 @@
+#!/bin/bash
+# ╔══════════════════════════════════════════════════════════════════════════╗
+# ║              SLUTTY ARCH RICE - LOCK SCREEN 💋🔥                          ║
+# ║         Lock your filthy desktop away from prying eyes!                 ║
+# ╚══════════════════════════════════════════════════════════════════════════╝
+
+# ═══════════════════════════════════════════════════════════════════════════
+# FILTHY LOCK MESSAGES - FOR THE TRUE DEGENERATE
+# ═══════════════════════════════════════════════════════════════════════════
+
+# Read current mode
+CURRENT_MODE_FILE="$HOME/.config/arch-rice-mode"
+CURRENT_MODE=$(cat "$CURRENT_MODE_FILE" 2>/dev/null || echo "normal")
+
+# Mode-specific lock messages
+if [[ "$CURRENT_MODE" == "degenerate" ]]; then
+    # DEGENERATE MODE - MAXIMUM FILTH
+    DEGENERATE_MESSAGES=(
+        "💋 SCREEN LOCKED 💋\nKeep your filthy hands off!\nI'll be touching myself..."
+        "🔒 LOCKED AND LOADED 🔒\nDon't touch my porn stash!\nSee you when I cum back..."
+        "🍆 NO PEEKING WHORE! 🍆\nThis desktop is for degenerates only!\nGo touch yourself elsewhere!"
+        "💦 LOCKED FOR PRIVACY 💦\nToo much filth on screen!\nBRB, consuming porn..."
+        "🔥 CUM BACK LATER 🔥\nThis slut is taking a break...\nDon't watch my porn without me!"
+        "🥛 PROTECTING THE CUM COUNT 🥛\nNo unauthorized loads!\nLock secured with slut energy!"
+        "💋 BRB BEING FILTHY 💋\nScreen secured.\nPorn stash protected.\nReturn for more sin!"
+        "🔒 DEGENERATE MODE ACTIVE 🔒\nLock engaged.\nFilthy secrets safe.\nUnlock to resume sinning!"
+    )
+    
+    # Pick random message
+    IDX=$((RANDOM % ${#DEGENERATE_MESSAGES[@]}))
+    MESSAGE="${DEGENERATE_MESSAGES[$IDX]}"
+    
+elif [[ "$CURRENT_MODE" == "horny" ]]; then
+    # HORNY MODE - TEASING WARMTH
+    HORNY_MESSAGES=(
+        "🔥 SCREEN LOCKED 🔥\nGetting warmed up...\nBRB, need a moment... 💦"
+        "💧 TOO HOT TO HANDLE 💧\nTaking a quick break...\nDon't let me cool down!"
+        "🔒 WETNESS PROTECTED 🔒\nScreen secured.\nArousal level: PRIVATE!"
+        "💦 LOCKED AND DRIPPING 💦\nNeed a moment to compose...\nBRB! 😉"
+        "🔥 HEATING UP 🔥\nLocked for privacy...\nGetting too flustered to continue!"
+    )
+    
+    IDX=$((RANDOM % ${#HORNY_MESSAGES[@]}))
+    MESSAGE="${HORNY_MESSAGES[$IDX]}"
+    
+else
+    # NORMAL MODE - CIVILIZED
+    NORMAL_MESSAGES=(
+        "💼 SCREEN LOCKED 💼\nProtecting professional work...\nBRB!"
+        "🔒 LOCKED 🔒\nAway from desk.\nWill return shortly."
+        "💼 AWAY 💼\nScreen secured for privacy."
+    )
+    
+    IDX=$((RANDOM % ${#NORMAL_MESSAGES[@]}))
+    MESSAGE="${NORMAL_MESSAGES[$IDX]}"
+fi
+
+# Show notification before locking
+notify-send "$(echo -e "$MESSAGE")" -t 3000
+
+# Small delay so they can read the message
+sleep 0.5
+
+# Lock the screen with betterlockscreen
+betterlockscreen -l --text "$MESSAGE"

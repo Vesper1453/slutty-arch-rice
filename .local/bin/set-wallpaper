@@ -1,0 +1,84 @@
+#!/bin/bash
+# ╔══════════════════════════════════════════════════════════════════════════╗
+# ║              SLUTTY ARCH RICE - WALLPAPER SETTER 💋                       ║
+# ║         Sets mode-specific wallpapers with feh                          ║
+# ╚══════════════════════════════════════════════════════════════════════════╝
+
+set -e
+
+DOTFILES_DIR="$HOME/dotfiles"
+CURRENT_MODE_FILE="$HOME/.config/arch-rice-mode"
+
+# Get current mode
+if [[ -f "$CURRENT_MODE_FILE" ]]; then
+    CURRENT_MODE=$(cat "$CURRENT_MODE_FILE")
+else
+    CURRENT_MODE="normal"
+fi
+
+WALLPAPER_DIR="$DOTFILES_DIR/themes/$CURRENT_MODE/wallpapers"
+
+# Function to set random wallpaper
+set_random_wallpaper() {
+    if [[ -d "$WALLPAPER_DIR" ]]; then
+        # Find all image files
+        wallpapers=($(find "$WALLPAPER_DIR" -type f \( -name "*.jpg" -o -name "*.png" -o -name "*.jpeg" -o -name "*.webp" \) 2>/dev/null))
+        
+        if [[ ${#wallpapers[@]} -gt 0 ]]; then
+            # Pick random wallpaper
+            selected="${wallpapers[$RANDOM % ${#wallpapers[@]}]}"
+            
+            # Set wallpaper
+            feh --bg-scale "$selected"
+            
+            echo "Wallpaper set: $(basename "$selected") 💋"
+            
+            # Save current wallpaper for reference
+            echo "$selected" > "$HOME/.config/current-wallpaper"
+        else
+            echo "No wallpapers found in $WALLPAPER_DIR"
+            # Fallback to solid color
+            xsetroot -solid "#1a0a2e"
+        fi
+    else
+        echo "Wallpaper directory not found: $WALLPAPER_DIR"
+        # Fallback to solid color based on mode
+        case $CURRENT_MODE in
+            degenerate)
+                xsetroot -solid "#1a0a2e"
+                ;;
+            horny)
+                xsetroot -solid "#2e0a1a"
+                ;;
+            normal)
+                xsetroot -solid "#1e1e2e"
+                ;;
+        esac
+    fi
+}
+
+# Function to set specific wallpaper
+set_specific_wallpaper() {
+    local wallpaper="$1"
+    
+    if [[ -f "$wallpaper" ]]; then
+        feh --bg-scale "$wallpaper"
+        echo "Wallpaper set: $(basename "$wallpaper") 💋"
+        echo "$wallpaper" > "$HOME/.config/current-wallpaper"
+    else
+        echo "Wallpaper not found: $wallpaper"
+        exit 1
+    fi
+}
+
+# ═══════════════════════════════════════════════════════════════════════════
+# MAIN
+# ═══════════════════════════════════════════════════════════════════════════
+
+if [[ $# -eq 0 ]]; then
+    # No arguments - set random wallpaper based on mode
+    set_random_wallpaper
+else
+    # Specific wallpaper provided
+    set_specific_wallpaper "$1"
+fi

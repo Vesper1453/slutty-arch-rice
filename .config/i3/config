@@ -1,0 +1,299 @@
+# ╔══════════════════════════════════════════════════════════════════════════╗
+# ║             SLUTTY ARCH LINUX RICE - i3 WINDOW MANAGER                   ║
+# ║                    Degenerate | Horny | Normal Modes                     ║
+# ║                                                                            ║
+# ║     💋 DEGENERATE: Maximum pornographic slut energy - NOT FOR PRUDES!    ║
+# ║     🔥 HORNY:     Warm, teasing, dripping with desire                    ║
+# ║     💼 NORMAL:    Clean, professional, for when you need to pretend      ║
+# ╚══════════════════════════════════════════════════════════════════════════╝
+
+# Load mode-specific configuration (auto-generated based on current mode)
+include ~/.config/i3/mode.conf
+
+# ═══════════════════════════════════════════════════════════════════════════
+# CORE SETTINGS - FOR THE ULTIMATE SLUT DESKTOP
+# ═══════════════════════════════════════════════════════════════════════════
+
+# Sexy font for window titles and status bar
+font pango:JetBrainsMono Nerd Font 10
+
+# Use Mouse+$mod to drag your filthy floating windows around
+tiling_drag modifier
+
+# Focus follows your cursor like a slut follows attention
+focus_follows_mouse yes
+
+# Border settings - thick enough to notice, thin enough to tease
+default_border pixel 2
+default_floating_border pixel 2
+hide_edge_borders smart
+
+# Gaps configuration (for i3-gaps) - wide open spaces for maximum sluttiness
+gaps inner 8
+gaps outer 0
+smart_gaps on
+
+# ═══════════════════════════════════════════════════════════════════════════
+# MOD KEY - Your key to unlock pure degeneracy
+# ═══════════════════════════════════════════════════════════════════════════
+
+set $mod Mod4
+
+# ═══════════════════════════════════════════════════════════════════════════
+# SEXY WORKSPACE NAMES - Get You In The Mood
+# ═══════════════════════════════════════════════════════════════════════════
+
+# All workspaces renamed for maximum slut energy
+set $ws1 "1:💻 CODE"
+set $ws2 "2:🌐 PORN"        # Default for browser windows
+set $ws3 "3:💬 SLUTS"       # Chat apps
+set $ws4 "4:🎵 MOANS"       # Music
+set $ws5 "5:📁 FILTH"       # Files
+set $ws6 "6:🎮 PLAY"        # Games
+set $ws7 "7:📝 SMUT"        # Writing/text
+set $ws8 "8:🎨 ART"         # Creative
+set $ws9 "9:🔧 TOYS"        # Tools/dev
+set $ws10 "10:🍆 CUM"       # Everything else / overflow
+
+# ═══════════════════════════════════════════════════════════════════════════
+# SLUTTY MODES - CHOOSE YOUR DEGENERACY LEVEL
+# ═══════════════════════════════════════════════════════════════════════════
+
+# Mode switcher - pick how whorish you wanna be today
+set $mode_mode 💋 CHOOSE YOUR SLUT ENERGY 💋: [d]egenerate [h]orny [n]ormal
+mode "$mode_mode" {
+    bindsym d exec --no-startup-id ~/.local/bin/switch-mode degenerate, mode "default"
+    bindsym h exec --no-startup-id ~/.local/bin/switch-mode horny, mode "default"
+    bindsym n exec --no-startup-id ~/.local/bin/switch-mode normal, mode "default"
+    bindsym Return mode "default"
+    bindsym Escape mode "default"
+}
+
+# ═══════════════════════════════════════════════════════════════════════════
+# KEYBINDINGS - FOR THE LAZY SLUT WHO WANTS IT NOW
+# ═══════════════════════════════════════════════════════════════════════════
+
+# Open your filthy terminal
+bindsym $mod+Return exec alacritty
+
+# Kill that window like a one-night stand
+bindsym $mod+q kill
+
+# Open app launcher to find your next toy
+bindsym $mod+d exec rofi -show drun
+
+# Mode switcher - change your slut energy level
+bindsym $mod+Shift+m mode "$mode_mode"
+
+# Degenerate bookmarks menu (adult sites)
+bindsym $mod+Shift+b exec --no-startup-id ~/.local/bin/degenerate-menu
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 🚨 PANIC BUTTON - EMERGENCY MODE SWITCH 🚨
+# ═══════════════════════════════════════════════════════════════════════════
+# Instantly switches to NORMAL mode, clears browser history,
+# kills porn windows, sanitizes clipboard and shell history.
+# YOUR BOSS KEY FOR WHEN SOMEONE WALKS IN!
+bindsym $mod+Shift+Escape exec --no-startup-id ~/.local/bin/panic-button
+
+# Quick pornhub (for the impatient slut)
+bindsym $mod+Shift+p exec --no-startup-id xdg-open https://pornhub.com
+
+# Screenshot your filthy desktop
+bindsym $mod+Print exec flameshot gui
+bindsym Print exec flameshot screen
+
+# Lock your screen so nobody sees your porn
+bindsym $mod+x exec betterlockscreen -l
+
+# Volume controls - pump up those moans
+bindsym XF86AudioRaiseVolume exec pactl set-sink-volume @DEFAULT_SINK@ +5% && notify-send "🔊 LOUDER!" "Pump up those moans!"
+bindsym XF86AudioLowerVolume exec pactl set-sink-volume @DEFAULT_SINK@ -5% && notify-send "🔉 Shhh..." "Quiet down, slut"
+bindsym XF86AudioMute exec pactl set-sink-mute @DEFAULT_SINK@ toggle && notify-send "🔇 MUTED" "No more moaning..."
+
+# Brightness controls - adjust the mood lighting
+bindsym XF86MonBrightnessUp exec brightnessctl set +5% && notify-send "☀️ BRIGHTER" "Let everyone see your filth"
+bindsym XF86MonBrightnessDown exec brightnessctl set 5%- && notify-send "🌙 DARKER" "Hiding your sins in the dark..."
+
+# Reload configuration
+bindsym $mod+Shift+c reload
+
+# Restart i3 inplace
+bindsym $mod+Shift+r restart
+
+# Exit i3 - end your slutty session
+bindsym $mod+Shift+e exec "notify-send '👋 BYE SLUT!' 'See you next time for more degeneracy...' && sleep 1 && i3-msg exit"
+
+# ═══════════════════════════════════════════════════════════════════════════
+# NAVIGATION - MOVE YOUR WINDOWS AROUND LIKE A SLUT MOVES
+# ═══════════════════════════════════════════════════════════════════════════
+
+# Change focus - look around for your next target
+bindsym $mod+h focus left
+bindsym $mod+j focus down
+bindsym $mod+k focus up
+bindsym $mod+l focus right
+
+# Move focused window - drag it where you want it
+bindsym $mod+Shift+h move left
+bindsym $mod+Shift+j move down
+bindsym $mod+Shift+k move up
+bindsym $mod+Shift+l move right
+
+# Split orientation - how do you want it?
+bindsym $mod+b split h  # Split horizontally (side by side, like a good DP)
+bindsym $mod+v split v  # Split vertically (stacked, like a good spitroast)
+
+# Fullscreen - get a better view of the action
+bindsym $mod+f fullscreen toggle
+
+# Layout modes - arrange your windows for maximum pleasure
+bindsym $mod+s layout stacking    # Stack 'em up like a gangbang
+bindsym $mod+w layout tabbed      # Tab through your collection
+bindsym $mod+e layout toggle split  # Toggle between arrangements
+
+# Floating - let that window move freely
+bindsym $mod+Shift+space floating toggle
+bindsym $mod+space focus mode_toggle
+
+# Focus parent container
+bindsym $mod+a focus parent
+
+# ═══════════════════════════════════════════════════════════════════════════
+# WORKSPACE NAVIGATION - JUMP BETWEEN YOUR SINFUL SPACES
+# ═══════════════════════════════════════════════════════════════════════════
+
+# Switch to workspace
+bindsym $mod+1 workspace $ws1
+bindsym $mod+2 workspace $ws2
+bindsym $mod+3 workspace $ws3
+bindsym $mod+4 workspace $ws4
+bindsym $mod+5 workspace $ws5
+bindsym $mod+6 workspace $ws6
+bindsym $mod+7 workspace $ws7
+bindsym $mod+8 workspace $ws8
+bindsym $mod+9 workspace $ws9
+bindsym $mod+0 workspace $ws10
+
+# Move window to workspace - relocate your filth
+bindsym $mod+Shift+1 move container to workspace $ws1
+bindsym $mod+Shift+2 move container to workspace $ws2
+bindsym $mod+Shift+3 move container to workspace $ws3
+bindsym $mod+Shift+4 move container to workspace $ws4
+bindsym $mod+Shift+5 move container to workspace $ws5
+bindsym $mod+Shift+6 move container to workspace $ws6
+bindsym $mod+Shift+7 move container to workspace $ws7
+bindsym $mod+Shift+8 move container to workspace $ws8
+bindsym $mod+Shift+9 move container to workspace $ws9
+bindsym $mod+Shift+0 move container to workspace $ws10
+
+# ═══════════════════════════════════════════════════════════════════════════
+# RESIZE MODE - MAKE IT BIGGER (THAT'S WHAT SHE SAID)
+# ═══════════════════════════════════════════════════════════════════════════
+
+set $resize_mode Resize: [h/j/k/l] stretch it, [Esc/Ret] finish
+mode "$resize_mode" {
+    bindsym h resize shrink width 10 px or 10 ppt
+    bindsym j resize grow height 10 px or 10 ppt
+    bindsym k resize shrink height 10 px or 10 ppt
+    bindsym l resize grow width 10 px or 10 ppt
+    bindsym Return mode "default"
+    bindsym Escape mode "default"
+}
+
+bindsym $mod+r mode "$resize_mode"
+
+# ═══════════════════════════════════════════════════════════════════════════
+# AUTOSTART APPLICATIONS - GET YOUR SLUTTY DESKTOP READY
+# ═══════════════════════════════════════════════════════════════════════════
+
+# Compositor for that sexy transparency and blur effects
+exec --no-startup-id picom --config ~/.config/picom/picom.conf
+
+# Polybar - your slutty status bar
+exec --no-startup-id ~/.config/polybar/launch.sh
+
+# Notification daemon - for your filthy notifications
+exec --no-startup-id dunst
+
+# Wallpaper - set that degenerate background
+exec --no-startup-id ~/.local/bin/set-wallpaper
+
+# Network applet - stay connected to your porn
+exec --no-startup-id nm-applet
+
+# Volume icon - monitor those moans
+exec --no-startup-id volumeicon
+
+# Welcome message - let you know you're ready to sin
+exec --no-startup-id sleep 2 && notify-send "💋 WELCOME BACK, SLUT 💋" "Your degenerate desktop is ready for filth! 🍆🔥"
+
+# ═══════════════════════════════════════════════════════════════════════════
+# WINDOW RULES - SOME WINDOWS LIKE TO FLOAT
+# ═══════════════════════════════════════════════════════════════════════════
+
+# Floating windows - let 'em move around
+for_window [class="Pavucontrol"] floating enable
+for_window [class="Nm-connection-editor"] floating enable
+for_window [class="Blueman-manager"] floating enable
+for_window [window_role="pop-up"] floating enable
+for_window [window_role="task_dialog"] floating enable
+for_window [title="Save As"] floating enable
+for_window [title="Open File"] floating enable
+
+# ═══════════════════════════════════════════════════════════════════════════
+# I3BAR (FALLBACK IF POLYBAR FAILS)
+# ═══════════════════════════════════════════════════════════════════════════
+
+bar {
+    status_command i3status
+    position bottom
+    colors {
+        statusline #ffffff
+        background #000000
+        focused_workspace #ff79c6 #ff79c6 #282a36
+        active_workspace #44475a #44475a #f8f8f2
+        inactive_workspace #282a36 #282a36 #b8b8b8
+        urgent_workspace #ff5555 #ff5555 #f8f8f2
+    }
+}
+
+# 🚨 PANIC BUTTON - Emergency boss key
+bindsym $mod+Shift+Escape exec --no-startup-id ~/.local/bin/panic-button
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 🍆 DEGENERATE TOOLS - PORN & HENTAI UTILITIES
+# ═══════════════════════════════════════════════════════════════════════════
+
+# Organize your collection
+bindsym $mod+Shift+o exec --no-startup-id ~/.local/bin/porn-organizer
+
+# Launch hentai manga viewer
+bindsym $mod+Shift+h exec --no-startup-id ~/.local/bin/hentai-viewer
+
+# Terminal porn viewer - ASCII art video playback
+bindsym $mod+Shift+v exec --no-startup-id ~/.local/bin/terminal-porn-viewer
+
+# Launch Stash server
+bindsym $mod+Shift+s exec --no-startup-id ~/.local/bin/stash-launcher
+
+# Clean metadata from files
+bindsym $mod+Shift+t exec --no-startup-id ~/.local/bin/metadata-cleaner
+
+# Download videos
+bindsym $mod+Shift+d exec --no-startup-id ~/.local/bin/porn-downloader
+
+# Deep privacy wipe
+bindsym $mod+Shift+w exec --no-startup-id ~/.local/bin/privacy-wipe
+
+# Find duplicate files
+bindsym $mod+Shift+f exec --no-startup-id ~/.local/bin/duplicate-finder
+
+# Generate thumbnails
+bindsym $mod+Shift+g exec --no-startup-id ~/.local/bin/thumbnail-generator
+
+# ═══════════════════════════════════════════════════════════════════════════
+# UTILITY KEYBINDINGS
+# ═══════════════════════════════════════════════════════════════════════════
+
+# vim: ft=i3config

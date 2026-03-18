@@ -1,0 +1,205 @@
+#!/bin/bash
+# ╔══════════════════════════════════════════════════════════════════════════╗
+# ║              SLUTTY ARCH RICE - HEALTH CHECK 💋                         ║
+# ║    Verify that all components are properly installed and running        ║
+# ╚══════════════════════════════════════════════════════════════════════════╝
+
+set -e
+
+DOTFILES_DIR="$HOME/dotfiles"
+CONFIG_DIR="$HOME/.config"
+CURRENT_MODE_FILE="$HOME/.config/arch-rice-mode"
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+
+check_pass() {
+    echo -e "${GREEN}✓${NC} $1"
+}
+
+check_fail() {
+    echo -e "${RED}✗${NC} $1"
+}
+
+check_warn() {
+    echo -e "${YELLOW}⚠${NC} $1"
+}
+
+print_header() {
+    echo -e "${CYAN}"
+    cat << 'EOF'
+╔══════════════════════════════════════════════════════════════════════════╗
+║                                                                          ║
+║     💋  SLUTTY ARCH RICE - HEALTH CHECK  💋                                ║
+║                                                                          ║
+╚══════════════════════════════════════════════════════════════════════════╝
+EOF
+    echo -e "${NC}"
+}
+
+# ═══════════════════════════════════════════════════════════════════════════
+# CHECK FUNCTIONS
+# ═══════════════════════════════════════════════════════════════════════════
+
+check_command() {
+    local cmd=$1
+    local pkg=$2
+    
+    if command -v "$cmd" &> /dev/null; then
+        check_pass "$cmd found"
+        return 0
+    else
+        check_fail "$cmd not found (install: $pkg)"
+        return 1
+    fi
+}
+
+check_config() {
+    local path=$1
+    
+    if [[ -f "$path" ]]; then
+        check_pass "$(basename $path) config exists"
+        return 0
+    else
+        check_fail "$(basename $path) config missing: $path"
+        return 1
+    fi
+}
+
+check_dir() {
+    local path=$1
+    
+    if [[ -d "$path" ]]; then
+        check_pass "$(basename $path) directory exists"
+        return 0
+    else
+        check_fail "$(basename $path) directory missing: $path"
+        return 1
+    fi
+}
+
+check_process() {
+    local name=$1
+    
+    if pgrep -x "$name" > /dev/null; then
+        check_pass "$name is running"
+        return 0
+    else
+        check_warn "$name is not running"
+        return 1
+    fi
+}
+
+# ═══════════════════════════════════════════════════════════════════════════
+# MAIN CHECKS
+# ═══════════════════════════════════════════════════════════════════════════
+
+main() {
+    print_header
+    
+    local errors=0
+    
+    echo -e "${CYAN}╔══════════════════════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${CYAN}║${NC} REQUIRED PACKAGES                                                        ${CYAN}║${NC}"
+    echo -e "${CYAN}╚══════════════════════════════════════════════════════════════════════════╝${NC}"
+    
+    check_command "i3" "i3-gaps" || ((errors++))
+    check_command "polybar" "polybar" || ((errors++))
+    check_command "rofi" "rofi" || ((errors++))
+    check_command "picom" "picom" || ((errors++))
+    check_command "dunst" "dunst" || ((errors++))
+    check_command "alacritty" "alacritty" || ((errors++))
+    check_command "feh" "feh" || ((errors++))
+    check_command "betterlockscreen" "betterlockscreen" || ((errors++))
+    check_command "zsh" "zsh" || ((errors++))
+    check_command "convert" "imagemagick" || check_warn "imagemagick not found (needed for wallpaper generation)"
+    
+    echo
+    echo -e "${CYAN}╔══════════════════════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${CYAN}║${NC} CONFIGURATION FILES                                                      ${CYAN}║${NC}"
+    echo -e "${CYAN}╚══════════════════════════════════════════════════════════════════════════╝${NC}"
+    
+    check_config "$CONFIG_DIR/i3/config" || ((errors++))
+    check_config "$CONFIG_DIR/i3/mode.conf" || ((errors++))
+    check_config "$CONFIG_DIR/polybar/config.ini" || ((errors++))
+    check_config "$CONFIG_DIR/polybar/launch.sh" || ((errors++))
+    check_config "$CONFIG_DIR/rofi/config.rasi" || ((errors++))
+    check_config "$CONFIG_DIR/alacritty/alacritty.yml" || ((errors++))
+    check_config "$CONFIG_DIR/picom/picom.conf" || ((errors++))
+    check_config "$CONFIG_DIR/dunst/dunstrc" || ((errors++))
+    
+    echo
+    echo -e "${CYAN}╔══════════════════════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${CYAN}║${NC} THEMES & SCRIPTS                                                         ${CYAN}║${NC}"
+    echo -e "${CYAN}╚══════════════════════════════════════════════════════════════════════════╝${NC}"
+    
+    check_dir "$DOTFILES_DIR/themes/degenerate" || ((errors++))
+    check_dir "$DOTFILES_DIR/themes/horny" || ((errors++))
+    check_dir "$DOTFILES_DIR/themes/normal" || ((errors++))
+    
+    check_config "$HOME/.local/bin/switch-mode" || ((errors++))
+    check_config "$HOME/.local/bin/set-wallpaper" || ((errors++))
+    check_config "$HOME/.local/bin/lock-screen" || ((errors++))
+    
+    echo
+    echo -e "${CYAN}╔══════════════════════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${CYAN}║${NC} RUNNING PROCESSES                                                        ${CYAN}║${NC}"
+    echo -e "${CYAN}╚══════════════════════════════════════════════════════════════════════════╝${NC}"
+    
+    check_process "i3"
+    check_process "polybar"
+    check_process "picom"
+    check_process "dunst"
+    
+    echo
+    echo -e "${CYAN}╔══════════════════════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${CYAN}║${NC} CURRENT MODE                                                             ${CYAN}║${NC}"
+    echo -e "${CYAN}╚══════════════════════════════════════════════════════════════════════════╝${NC}"
+    
+    if [[ -f "$CURRENT_MODE_FILE" ]]; then
+        local mode=$(cat "$CURRENT_MODE_FILE")
+        case "$mode" in
+            degenerate)
+                echo -e "Current mode: ${MAGENTA}💋 DEGENERATE 💋${NC}"
+                ;;
+            horny)
+                echo -e "Current mode: ${RED}🔥 HORNY 🔥${NC}"
+                ;;
+            normal)
+                echo -e "Current mode: ${BLUE}💼 NORMAL 💼${NC}"
+                ;;
+        esac
+    else
+        check_warn "No mode set yet. Run: switch-mode normal"
+    fi
+    
+    echo
+    echo -e "${CYAN}╔══════════════════════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${CYAN}║${NC} SUMMARY                                                                  ${CYAN}║${NC}"
+    echo -e "${CYAN}╚══════════════════════════════════════════════════════════════════════════╝${NC}"
+    
+    if [[ $errors -eq 0 ]]; then
+        echo -e "${GREEN}All checks passed! Your Slutty Arch Rice is ready to go! 💋🔥🍆${NC}"
+        echo
+        echo "Next steps:"
+        echo "  1. Log out and select 'i3' as your window manager"
+        echo "  2. Run: switch-mode degenerate   # For maximum slut energy"
+        echo "  3. Enjoy your hot, customizable desktop!"
+    else
+        echo -e "${RED}Found $errors issue(s). Please fix them before continuing.${NC}"
+        echo
+        echo "To install missing packages:"
+        echo "  ./install.sh"
+        echo
+        echo "To re-run the installer:"
+        echo "  cd ~/dotfiles && ./install.sh"
+    fi
+    
+    return $errors
+}
+
+# Run main
+main "$@"

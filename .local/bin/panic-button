@@ -1,0 +1,241 @@
+#!/bin/bash
+# ╔══════════════════════════════════════════════════════════════════════════╗
+# ║              🚨 PANIC BUTTON - BOSS KEY / EMERGENCY MODE 🚨               ║
+# ║                                                                          ║
+# ║    ONE KEYPRESS = Instant respectability! Wipes history, locks porn,      ║
+# ║    switches to Normal Mode, and looks like you're doing WORK! 💼         ║
+# ╚══════════════════════════════════════════════════════════════════════════╝
+
+set -e
+
+# Configuration
+CONFIG_DIR="$HOME/.config"
+BROWSER_HISTORY_DIR="$HOME/.config"
+PANIC_LOG="$HOME/.panic-log"
+
+# ═══════════════════════════════════════════════════════════════════════════
+# PANIC FUNCTIONS - SAVE YOUR ASS
+# ═══════════════════════════════════════════════════════════════════════════
+
+log_panic() {
+    local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+    echo "[$timestamp] PANIC ACTIVATED - Mode switched to NORMAL" >> "$PANIC_LOG"
+}
+
+# Kill all porn browser windows
+kill_porn_windows() {
+    # Try to close common porn sites (Firefox, Chrome, Chromium)
+    local porn_domains="pornhub|xvideos|xnxx|redtube|youporn|tube8|spankbang|xhamster|chaturbate|onlyfans|manyvids|fansly|camsoda|stripchat|bongacams|myfreecams|jerk mate|hentaihaven|rule34|e621|gelbooru|danbooru|e-hentai|exhentai|luscious"
+    
+    # Get window IDs of browsers with porn sites
+    local porn_windows=$(xdotool search --class "firefox|chrome|chromium" 2>/dev/null || true)
+    
+    for window in $porn_windows; do
+        local title=$(xdotool getwindowname "$window" 2>/dev/null || echo "")
+        if echo "$title" | grep -qiE "$porn_domains"; then
+            xdotool windowkill "$window" 2>/dev/null || true
+        fi
+    done
+    
+    # Also try to close any private/incognito windows
+    pkill -f "firefox.*Private" 2>/dev/null || true
+    pkill -f "chrome.*Incognito" 2>/dev/null || true
+    pkill -f "chromium.*Incognito" 2>/dev/null || true
+}
+
+# Clear browser history (as much as possible)
+clear_browser_history() {
+    local cleared_any=false
+    
+    # Firefox
+    if [[ -d "$HOME/.mozilla/firefox" ]]; then
+        find "$HOME/.mozilla/firefox" -name "places.sqlite" -exec rm -f {} \; 2>/dev/null || true
+        find "$HOME/.mozilla/firefox" -name "cookies.sqlite" -exec rm -f {} \; 2>/dev/null || true
+        find "$HOME/.mozilla/firefox" -name "formhistory.sqlite" -exec rm -f {} \; 2>/dev/null || true
+        pkill -f firefox 2>/dev/null || true
+        cleared_any=true
+    fi
+    
+    # Chrome/Chromium
+    if [[ -d "$HOME/.config/google-chrome" ]]; then
+        rm -rf "$HOME/.config/google-chrome/Default/History"* 2>/dev/null || true
+        rm -rf "$HOME/.config/google-chrome/Default/Cookies"* 2>/dev/null || true
+        rm -rf "$HOME/.config/google-chrome/Default/Login Data"* 2>/dev/null || true
+        pkill -f chrome 2>/dev/null || true
+        cleared_any=true
+    fi
+    
+    if [[ -d "$HOME/.config/chromium" ]]; then
+        rm -rf "$HOME/.config/chromium/Default/History"* 2>/dev/null || true
+        rm -rf "$HOME/.config/chromium/Default/Cookies"* 2>/dev/null || true
+        rm -rf "$HOME/.config/chromium/Default/Login Data"* 2>/dev/null || true
+        pkill -f chromium 2>/dev/null || true
+        cleared_any=true
+    fi
+    
+    # Brave
+    if [[ -d "$HOME/.config/BraveSoftware" ]]; then
+        rm -rf "$HOME/.config/BraveSoftware/Brave-Browser/Default/History"* 2>/dev/null || true
+        pkill -f brave 2>/dev/null || true
+        cleared_any=true
+    fi
+    
+    # Qutebrowser
+    if [[ -d "$HOME/.local/share/qutebrowser" ]]; then
+        rm -rf "$HOME/.local/share/qutebrowser/history.sqlite" 2>/dev/null || true
+        pkill -f qutebrowser 2>/dev/null || true
+        cleared_any=true
+    fi
+    
+    # Epiphany (GNOME Web)
+    if [[ -d "$HOME/.local/share/epiphany" ]]; then
+        rm -rf "$HOME/.local/share/epiphany"/*/history* 2>/dev/null || true
+        pkill -f epiphany 2>/dev/null || true
+        cleared_any=true
+    fi
+    
+    echo "$cleared_any"
+}
+
+# Clear recent files
+clear_recent_files() {
+    # Clear GTK recent files
+    rm -f "$HOME/.local/share/recently-used.xbel" 2>/dev/null || true
+    rm -f "$HOME/.local/share/recently-used.xbel.*" 2>/dev/null || true
+    
+    # Clear KDE recent files if present
+    rm -f "$HOME/.kde/share/config/k Recent Files" 2>/dev/null || true
+    
+    # Clear various cache directories
+    rm -rf "$HOME/.cache/thumbnails"/* 2>/dev/null || true
+}
+
+# Clear clipboard (might have porn URLs)
+clear_clipboard() {
+    echo "" | xclip -selection clipboard 2>/dev/null || true
+    echo "" | xclip -selection primary 2>/dev/null || true
+    echo "" | xclip -selection secondary 2>/dev/null || true
+    
+    # Alternative: wl-copy for Wayland
+    echo "" | wl-copy 2>/dev/null || true
+}
+
+# Clear bash history of suspicious commands
+clear_bash_history() {
+    # Remove lines containing porn terms from history
+    local temp_history=$(mktemp)
+    grep -viE "porn|xxx|slut|whore|cum|degenerate|horny|switch-mode.*degenerate|switch-mode.*horny" "$HOME/.bash_history" > "$temp_history" 2>/dev/null || true
+    mv "$temp_history" "$HOME/.bash_history" 2>/dev/null || true
+    
+    # Clear zsh history too
+    if [[ -f "$HOME/.zsh_history" ]]; then
+        temp_history=$(mktemp)
+        grep -viE "porn|xxx|slut|whore|cum|degenerate|horny|switch-mode.*degenerate|switch-mode.*horny" "$HOME/.zsh_history" > "$temp_history" 2>/dev/null || true
+        mv "$temp_history" "$HOME/.zsh_history" 2>/dev/null || true
+    fi
+    
+    # Clear fish history
+    if [[ -d "$HOME/.local/share/fish" ]]; then
+        rm -f "$HOME/.local/share/fish/fish_history" 2>/dev/null || true
+    fi
+}
+
+# Open a "decoy" work window
+open_decoy_window() {
+    # Try to open something that looks like work
+    if command -v code &> /dev/null; then
+        code "$HOME" &
+    elif command -v subl &> /dev/null; then
+        subl "$HOME" &
+    elif command -v gedit &> /dev/null; then
+        gedit &
+    elif command -v xterm &> /dev/null; then
+        xterm -e "top" &
+    fi
+}
+
+# Switch to Normal Mode instantly
+switch_to_normal() {
+    ~/.local/bin/switch-mode normal &
+}
+
+# Show "Professional" notification
+show_safe_notification() {
+    notify-send "💼 WORK MODE ACTIVATED" "Switched to professional desktop. All clear! ✨" --urgency=critical
+}
+
+# Play a subtle sound (optional)
+play_safe_sound() {
+    # Play a subtle notification sound if available
+    if [[ -f "/usr/share/sounds/freedesktop/stereo/message.oga" ]]; then
+        paplay "/usr/share/sounds/freedesktop/stereo/message.oga" 2>/dev/null || true
+    fi
+}
+
+# ═══════════════════════════════════════════════════════════════════════════
+# MAIN PANIC SEQUENCE
+# ═══════════════════════════════════════════════════════════════════════════
+
+main() {
+    # 1. LOG THE PANIC
+    log_panic
+    
+    # 2. INSTANT MODE SWITCH (most important - visual change)
+    switch_to_normal &
+    
+    # 3. KILL PORN WINDOWS
+    kill_porn_windows &
+    
+    # 4. CLEAR BROWSER HISTORY
+    local cleared=$(clear_browser_history)
+    
+    # 5. CLEAR RECENT FILES
+    clear_recent_files &
+    
+    # 6. CLEAR CLIPBOARD
+    clear_clipboard &
+    
+    # 7. CLEAR BASH HISTORY
+    clear_bash_history &
+    
+    # 8. WAIT FOR MODE SWITCH
+    sleep 1
+    
+    # 9. SHOW SAFE NOTIFICATION
+    show_safe_notification
+    
+    # 10. PLAY SOUND
+    play_safe_sound
+    
+    # 11. OPEN DECOY (optional - might be too suspicious if manual)
+    # open_decoy_window
+    
+    # Print summary (for debugging)
+    echo "🚨 PANIC BUTTON ACTIVATED 🚨"
+    echo "✅ Switched to NORMAL mode"
+    echo "✅ Killed porn windows"
+    if [[ "$cleared" == "true" ]]; then
+        echo "✅ Cleared browser history"
+    else
+        echo "⚠️  No supported browsers found to clear"
+    fi
+    echo "✅ Cleared recent files"
+    echo "✅ Cleared clipboard"
+    echo "✅ Sanitized shell history"
+    echo ""
+    echo "💼 You now look like a respectable professional!"
+    echo "🔒 Panic logged to: $PANIC_LOG"
+}
+
+# ═══════════════════════════════════════════════════════════════════════════
+# ENTRY POINT
+# ═══════════════════════════════════════════════════════════════════════════
+
+# Check if xdotool is installed
+if ! command -v xdotool &> /dev/null; then
+    echo "⚠️  Warning: xdotool not installed. Porn window killing may not work."
+    echo "   Install with: sudo pacman -S xdotool"
+fi
+
+# Run panic sequence
+main "$@"

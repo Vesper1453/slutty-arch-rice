@@ -1,0 +1,124 @@
+/* ╔══════════════════════════════════════════════════════════════════════════╗
+   ║              ROFI THEME - NORMAL MODE 💼✨                                ║
+   ║         Clean dark theme with professional blue accents                ║
+   ╚══════════════════════════════════════════════════════════════════════════╝ */
+
+* {
+    background:     #1e1e2e;
+    background-alt: #313244;
+    foreground:     #cdd6f4;
+    primary:        #89b4fa;
+    secondary:      #cba6f7;
+    urgent:         #f38ba8;
+    bg-transparent: #1e1e2eCC;
+}
+
+window {
+    width: 45%;
+    height: 50%;
+    transparency: "real";
+    background-color: @bg-transparent;
+    border: 1px solid;
+    border-color: @primary;
+    border-radius: 10px;
+    padding: 15px;
+    location: center;
+    anchor: center;
+}
+
+mainbox {
+    spacing: 10px;
+    padding: 10px;
+    background-color: transparent;
+    children: [inputbar, listview, mode-switcher];
+}
+
+inputbar {
+    spacing: 8px;
+    padding: 10px;
+    background-color: @background-alt;
+    border: 1px solid;
+    border-color: @primary;
+    border-radius: 8px;
+    children: [prompt, textbox-prompt-colon, entry];
+}
+
+prompt {
+    font: "JetBrainsMono Nerd Font Bold 12";
+    color: @primary;
+    background-color: transparent;
+    padding: 5px;
+}
+
+textbox-prompt-colon {
+    font: "JetBrainsMono Nerd Font 12";
+    color: @secondary;
+    background-color: transparent;
+    expand: false;
+    str: "▶";
+    padding: 5px;
+}
+
+entry {
+    font: "JetBrainsMono Nerd Font 12";
+    color: @foreground;
+    background-color: @background;
+    border: 1px solid;
+    border-color: @primary;
+    border-radius: 6px;
+    padding: 6px;
+    placeholder: "Search...";
+    placeholder-color: @secondary;
+}
+
+listview {
+    spacing: 5px;
+    padding: 5px;
+    background-color: transparent;
+    lines: 8;
+    columns: 1;
+    fixed-height: true;
+    dynamic: true;
+}
+
+element {
+    font: "JetBrainsMono Nerd Font 11";
+    spacing: 8px;
+    padding: 8px 10px;
+    background-color: @background;
+    border: 1px solid;
+    border-color: @background-alt;
+    border-radius: 6px;
+    text-color: @foreground;
+}
+
+element selected.normal {
+    background-color: @primary;
+    text-color: @background;
+    border-color: @secondary;
+}
+
+element-icon {
+    size: 1.2em;
+    background-color: transparent;
+}
+
+element-text {
+    background-color: transparent;
+    text-color: inherit;
+}
+
+message {
+    background-color: @background-alt;
+    border: 1px solid;
+    border-color: @primary;
+    border-radius: 6px;
+    padding: 8px;
+}
+
+textbox {
+    font: "JetBrainsMono Nerd Font 11";
+    color: @primary;
+    background-color: transparent;
+    horizontal-align: 0.5;
+}

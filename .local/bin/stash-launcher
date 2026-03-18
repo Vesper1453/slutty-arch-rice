@@ -1,0 +1,329 @@
+#!/bin/bash
+# ╔══════════════════════════════════════════════════════════════════════════╗
+# ║          🗃️ STASH LAUNCHER - Self-Hosted Porn Organizer 💋              ║
+# ║    Launch and manage Stash for organizing your adult collection         ║
+# ╚══════════════════════════════════════════════════════════════════════════╝
+
+# Configuration
+STASH_DIR="${STASH_DIR:-$HOME/Stash}"
+STASH_CONFIG="$HOME/.stash"
+STASH_PORT="${STASH_PORT:-9999}"
+DOCKER_IMAGE="stashapp/stash:latest"
+
+# Colors
+PINK='\033[38;5;205m'
+PURPLE='\033[38;5;141m'
+RED='\033[38;5;196m'
+GREEN='\033[38;5;82m'
+RESET='\033[0m'
+
+show_banner() {
+    echo -e "${PURPLE}"
+    cat << 'EOF'
+     ____  _        _      _    _       
+    / ___|| |_ __ _| | ___| |_ / | __ _ 
+    \___ \| __/ _` | |/ _ \ __|| |/ _` |
+     ___) | || (_| | |  __/ |_ | | (_| |
+    |____/ \__\__,_|_|\___|\__||_|\__,_|
+                                          
+     💋 Self-Hosted Adult Content Organizer 💋
+EOF
+    echo -e "${RESET}"
+}
+
+show_help() {
+    echo "Usage: stash-launcher [COMMAND]"
+    echo ""
+    echo "Commands:"
+    echo "  start       - Start Stash server"
+    echo "  stop        - Stop Stash server"
+    echo "  restart     - Restart Stash server"
+    echo "  status      - Check if Stash is running"
+    echo "  update      - Update to latest Stash version"
+    echo "  logs        - View Stash logs"
+    echo "  open        - Open Stash in browser"
+    echo "  backup      - Backup Stash database"
+    echo "  scan        - Trigger library scan"
+    echo "  generate    - Generate thumbnails/previews"
+    echo ""
+    echo "Environment Variables:"
+    echo "  STASH_DIR     - Media directory (default: ~/Stash)"
+    echo "  STASH_PORT    - Web UI port (default: 9999)"
+}
+
+# Check if Docker is installed
+check_docker() {
+    if ! command -v docker &> /dev/null; then
+        echo -e "${RED}Error:${RESET} Docker is not installed!"
+        echo "Install with: sudo pacman -S docker"
+        echo "Then start: sudo systemctl enable --now docker"
+        exit 1
+    fi
+    
+    # Check if docker daemon is running
+    if ! docker info &> /dev/null; then
+        echo -e "${RED}Error:${RESET} Docker daemon is not running!"
+        echo "Start with: sudo systemctl start docker"
+        exit 1
+    fi
+}
+
+# Setup directories
+setup_dirs() {
+    mkdir -p "$STASH_DIR"
+    mkdir -p "$STASH_CONFIG"
+    mkdir -p "$HOME/.stash-generated"
+    
+    # Create docker-compose.yml if it doesn't exist
+    if [[ ! -f "$STASH_CONFIG/docker-compose.yml" ]]; then
+        cat > "$STASH_CONFIG/docker-compose.yml" << EOF
+version: '3.4'
+
+services:
+  stash:
+    image: $DOCKER_IMAGE
+    container_name: stash
+    restart: unless-stopped
+    ports:
+      - "$STASH_PORT:9999"
+    volumes:
+      - $STASH_CONFIG:/root/.stash
+      - $STASH_DIR:/data
+      - $HOME/.stash-generated:/generated
+    environment:
+      - STASH_STASH=/data
+      - STASH_GENERATED=/generated
+EOF
+        echo -e "${GREEN}✓ Created docker-compose.yml${RESET}"
+    fi
+}
+
+# Start Stash
+start_stash() {
+    check_docker
+    setup_dirs
+    
+    echo -e "${PINK}Starting Stash...${RESET}"
+    
+    cd "$STASH_CONFIG"
+    
+    if docker ps | grep -q "stash"; then
+        echo -e "${GREEN}Stash is already running!${RESET}"
+        echo -e "${PURPLE}Access at:${RESET} http://localhost:$STASH_PORT"
+        return 0
+    fi
+    
+    docker-compose up -d 2>/dev/null || docker run -d \
+        --name stash \
+        --restart unless-stopped \
+        -p "$STASH_PORT:9999" \
+        -v "$STASH_CONFIG:/root/.stash" \
+        -v "$STASH_DIR:/data" \
+        -v "$HOME/.stash-generated:/generated" \
+        -e "STASH_STASH=/data" \
+        -e "STASH_GENERATED=/generated" \
+        "$DOCKER_IMAGE"
+    
+    if [[ $? -eq 0 ]]; then
+        echo -e "${GREEN}✓ Stash started successfully!${RESET}"
+        echo -e "${PURPLE}💋 Access your collection at:${RESET} http://localhost:$STASH_PORT"
+        echo ""
+        echo -e "${PINK}First time setup:${RESET}"
+        echo "  1. Open the URL above"
+        echo "  2. Set your library path to /data"
+        echo "  3. Let Stash scan your collection!"
+    else
+        echo -e "${RED}✗ Failed to start Stash${RESET}"
+        return 1
+    fi
+}
+
+# Stop Stash
+stop_stash() {
+    echo -e "${PINK}Stopping Stash...${RESET}"
+    
+    cd "$STASH_CONFIG" 2>/dev/null || true
+    
+    if docker ps | grep -q "stash"; then
+        docker-compose down 2>/dev/null || docker stop stash
+        docker rm stash 2>/dev/null || true
+        echo -e "${GREEN}✓ Stash stopped${RESET}"
+    else
+        echo -e "${PURPLE}Stash is not running${RESET}"
+    fi
+}
+
+# Check status
+status_stash() {
+    if docker ps | grep -q "stash"; then
+        echo -e "${GREEN}✓ Stash is running${RESET}"
+        echo -e "${PURPLE}URL:${RESET} http://localhost:$STASH_PORT"
+        echo -e "${PURPLE}Config:${RESET} $STASH_CONFIG"
+        echo -e "${PURPLE}Media:${RESET} $STASH_DIR"
+        
+        # Show uptime
+        local uptime=$(docker ps --filter "name=stash" --format "{{.Status}}" 2>/dev/null)
+        echo -e "${PURPLE}Status:${RESET} $uptime"
+    else
+        echo -e "${RED}✗ Stash is not running${RESET}"
+        echo "Start with: stash-launcher start"
+    fi
+}
+
+# Update Stash
+update_stash() {
+    check_docker
+    
+    echo -e "${PINK}Updating Stash...${RESET}"
+    
+    stop_stash
+    docker pull "$DOCKER_IMAGE"
+    start_stash
+    
+    echo -e "${GREEN}✓ Stash updated to latest version!${RESET}"
+}
+
+# View logs
+logs_stash() {
+    if docker ps | grep -q "stash"; then
+        echo -e "${PINK}Stash logs (Ctrl+C to exit):${RESET}"
+        docker logs -f stash 2>&1 | head -100
+    else
+        echo -e "${RED}Stash is not running${RESET}"
+    fi
+}
+
+# Open in browser
+open_stash() {
+    local url="http://localhost:$STASH_PORT"
+    
+    echo -e "${PINK}Opening Stash...${RESET}"
+    
+    # Try different browsers
+    if command -v firefox &> /dev/null; then
+        firefox --private-window "$url" &
+    elif command -v brave &> /dev/null; then
+        brave --incognito "$url" &
+    elif command -v chromium &> /dev/null; then
+        chromium --incognito "$url" &
+    elif command -v google-chrome-stable &> /dev/null; then
+        google-chrome-stable --incognito "$url" &
+    else
+        xdg-open "$url" &
+    fi
+    
+    echo -e "${GREEN}✓ Opened in browser${RESET}"
+}
+
+# Backup database
+backup_stash() {
+    local backup_dir="$HOME/.stash-backups"
+    local timestamp=$(date +%Y%m%d_%H%M%S)
+    local backup_file="stash_backup_$timestamp.tar.gz"
+    
+    mkdir -p "$backup_dir"
+    
+    echo -e "${PINK}Creating backup...${RESET}"
+    
+    tar -czf "$backup_dir/$backup_file" -C "$STASH_CONFIG" . 2>/dev/null || {
+        echo -e "${RED}Backup failed${RESET}"
+        return 1
+    }
+    
+    echo -e "${GREEN}✓ Backup created:${RESET} $backup_dir/$backup_file"
+    
+    # Keep only last 10 backups
+    ls -t "$backup_dir"/*.tar.gz | tail -n +11 | xargs rm -f 2>/dev/null || true
+    
+    echo -e "${PURPLE}Total backups:${RESET} $(ls "$backup_dir"/*.tar.gz 2>/dev/null | wc -l)"
+}
+
+# Trigger scan
+scan_stash() {
+    if ! docker ps | grep -q "stash"; then
+        echo -e "${RED}Stash is not running${RESET}"
+        return 1
+    fi
+    
+    echo -e "${PINK}Triggering library scan...${RESET}"
+    
+    # Use Stash GraphQL API to trigger scan
+    curl -X POST \
+        -H "Content-Type: application/json" \
+        -d '{"query": "mutation { metadataScan(input: { useFileMetadata: true }) }"}' \
+        http://localhost:$STASH_PORT/graphql 2>/dev/null || {
+        echo -e "${PURPLE}Scan triggered via UI or Stash API not available${RESET}"
+    }
+    
+    echo -e "${GREEN}✓ Scan started!${RESET}"
+    echo "Check the Stash UI for progress."
+}
+
+# Generate previews
+generate_stash() {
+    if ! docker ps | grep -q "stash"; then
+        echo -e "${RED}Stash is not running${RESET}"
+        return 1
+    fi
+    
+    echo -e "${PINK}Generating thumbnails and previews...${RESET}"
+    
+    curl -X POST \
+        -H "Content-Type: application/json" \
+        -d '{"query": "mutation { metadataGenerate(input: { sprites: true, previews: true, markers: true, transcodes: false, phashes: true }) }"}' \
+        http://localhost:$STASH_PORT/graphql 2>/dev/null || {
+        echo -e "${PURPLE}Generation started via UI${RESET}"
+    }
+    
+    echo -e "${GREEN}✓ Generation started!${RESET}"
+}
+
+# Main command handler
+main() {
+    show_banner
+    
+    case "${1:-start}" in
+        start)
+            start_stash
+            ;;
+        stop)
+            stop_stash
+            ;;
+        restart)
+            stop_stash
+            sleep 2
+            start_stash
+            ;;
+        status)
+            status_stash
+            ;;
+        update)
+            update_stash
+            ;;
+        logs)
+            logs_stash
+            ;;
+        open|ui|web)
+            open_stash
+            ;;
+        backup)
+            backup_stash
+            ;;
+        scan|rescan)
+            scan_stash
+            ;;
+        generate|thumbs|preview)
+            generate_stash
+            ;;
+        -h|--help|help)
+            show_help
+            ;;
+        *)
+            echo "Unknown command: $1"
+            show_help
+            exit 1
+            ;;
+    esac
+}
+
+main "$@"
