@@ -62,9 +62,33 @@ backup_existing() {
 
 # Install dependencies with better error handling
 install_dependencies() {
-    log_info "Detecting package manager..."
+    log_info "Detecting distribution..."
     
-    if command -v pacman &>/dev/null; then
+    # Check if running EndeavourOS
+    if [[ -f /etc/os-release ]] && grep -q "EndeavourOS" /etc/os-release; then
+        log_info "💜 EndeavourOS detected!"
+        log_info "Installing i3 + gaps and all required packages..."
+        
+        # Update first
+        sudo pacman -Syu --noconfirm || log_warn "Some updates failed, continuing..."
+        
+        # Install all needed packages
+        sudo pacman -S --needed --noconfirm i3-wm i3-gaps i3status polybar rofi alacritty picom dunst feh mpv zsh curl git wget || {
+            log_warn "Some packages failed - trying without i3-gaps..."
+            sudo pacman -S --needed --noconfirm i3-wm i3status polybar rofi alacritty picom dunst feh mpv zsh curl git
+        }
+        
+        # Check if yay is installed (AUR helper)
+        if ! command -v yay &>/dev/null; then
+            log_info "Installing yay (AUR helper)..."
+            git clone https://aur.archlinux.org/yay.git /tmp/yay
+            cd /tmp/yay && makepkg -si --noconfirm
+            cd -
+        fi
+        
+        log_success "EndeavourOS packages installed!"
+        
+    elif command -v pacman &>/dev/null; then
         log_info "Arch Linux detected (pacman)"
         log_info "Installing packages..."
         sudo pacman -Syu --noconfirm || log_warn "System update failed, continuing..."
@@ -78,14 +102,13 @@ install_dependencies() {
         sudo apt update || log_warn "Update failed, continuing..."
         sudo apt install -y i3-wm i3status suckless-tools polybar rofi alacritty compton dunst feh mpv zsh curl git wget || {
             log_warn "Some packages failed - trying alternatives..."
-            # Try without polybar (might need build from source)
             sudo apt install -y i3-wm i3status rofi alacritty compton dunst feh mpv zsh curl git
         }
     elif command -v dnf &>/dev/null; then
         log_info "Fedora detected (dnf)"
         sudo dnf install -y i3 i3status polybar rofi alacritty picom dunst feh mpv zsh curl git
     else
-        log_warn "Unknown package manager - please install dependencies manually"
+        log_warn "Unknown distribution - please install dependencies manually"
         log_info "Required packages: i3-wm, polybar, rofi, alacritty, picom, dunst, feh, mpv, zsh"
     fi
 }
