@@ -60,14 +60,33 @@ backup_existing() {
     fi
 }
 
-# Install dependencies
+# Install dependencies with better error handling
 install_dependencies() {
-    log_info "Installing dependencies..."
+    log_info "Detecting package manager..."
     
     if command -v pacman &>/dev/null; then
-        sudo pacman -S --needed --noconfirm i3-wm polybar rofi alacritty picom dunst feh mpv zsh curl git 2>/dev/null || log_warn "Some packages failed"
+        log_info "Arch Linux detected (pacman)"
+        log_info "Installing packages..."
+        sudo pacman -Syu --noconfirm || log_warn "System update failed, continuing..."
+        sudo pacman -S --needed --noconfirm i3-wm i3status polybar rofi alacritty picom dunst feh mpv zsh curl git wget || {
+            log_warn "Some packages failed to install - you may need to install manually"
+            log_info "Required: i3-wm, polybar, rofi, alacritty, picom, dunst, feh, mpv, zsh"
+        }
     elif command -v apt &>/dev/null; then
-        sudo apt install -y i3-wm suckless-tools polybar rofi alacritty compton dunst feh mpv zsh curl git 2>/dev/null || log_warn "Some packages failed"
+        log_info "Debian/Ubuntu detected (apt)"
+        log_info "Installing packages..."
+        sudo apt update || log_warn "Update failed, continuing..."
+        sudo apt install -y i3-wm i3status suckless-tools polybar rofi alacritty compton dunst feh mpv zsh curl git wget || {
+            log_warn "Some packages failed - trying alternatives..."
+            # Try without polybar (might need build from source)
+            sudo apt install -y i3-wm i3status rofi alacritty compton dunst feh mpv zsh curl git
+        }
+    elif command -v dnf &>/dev/null; then
+        log_info "Fedora detected (dnf)"
+        sudo dnf install -y i3 i3status polybar rofi alacritty picom dunst feh mpv zsh curl git
+    else
+        log_warn "Unknown package manager - please install dependencies manually"
+        log_info "Required packages: i3-wm, polybar, rofi, alacritty, picom, dunst, feh, mpv, zsh"
     fi
 }
 
