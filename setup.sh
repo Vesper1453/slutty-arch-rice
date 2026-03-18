@@ -29,18 +29,43 @@ banner() {
     echo -e "${RESET}"
 }
 
-# Check prerequisites
+# Check prerequisites - handles both piped and local execution
 check_prerequisites() {
     log_info "Checking prerequisites..."
     
-    if [[ ! -f "$0" ]]; then
-        log_error "Cannot determine script location"
-        exit 1
+    # Detect if script was piped (no proper file location)
+    if [[ "$0" == "/dev/stdin" ]] || [[ "$0" == "bash" ]] || [[ ! -f "$0" ]]; then
+        log_info "Script piped from curl - downloading full repository..."
+        
+        # Clone the repo
+        REPO_URL="https://github.com/Vesper1453/slutty-arch-rice.git"
+        INSTALL_DIR="$HOME/slutty-arch-rice"
+        
+        # Remove old install if exists
+        [[ -d "$INSTALL_DIR" ]] && rm -rf "$INSTALL_DIR"
+        
+        git clone "$REPO_URL" "$INSTALL_DIR" || {
+            log_error "Failed to clone repository. Trying with curl..."
+            # Fallback: download zip
+            curl -fsSL "https://github.com/Vesper1453/slutty-arch-rice/archive/refs/heads/main.zip" -o /tmp/slutty-arch-rice.zip
+            cd /tmp && unzip -q slutty-arch-rice.zip
+            mv /tmp/slutty-arch-rice-main "$INSTALL_DIR"
+        }
+        
+        DOTFILES_DIR="$INSTALL_DIR"
+        
+        log_success "Repository downloaded to: $DOTFILES_DIR"
+        log_info "Continuing setup from downloaded repo..."
+        
+        # Re-run the setup from the downloaded location
+        cd "$DOTFILES_DIR"
+        exec bash "$DOTFILES_DIR/setup.sh" "${@}"
+    else
+        # Normal execution - script is a file
+        DOTFILES_DIR="$(cd "$(dirname "$0")" && pwd)"
     fi
     
-    DOTFILES_DIR="$(cd "$(dirname "$0")" && pwd)"
     export DOTFILES_DIR
-    
     log_success "Dotfiles directory: $DOTFILES_DIR"
 }
 
