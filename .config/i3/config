@@ -95,6 +95,9 @@ bindsym $mod+Shift+b exec --no-startup-id ~/.local/bin/degenerate-menu
 # kills porn windows, sanitizes clipboard and shell history.
 # YOUR BOSS KEY FOR WHEN SOMEONE WALKS IN!
 bindsym $mod+Shift+Escape exec --no-startup-id ~/.local/bin/panic-button
+# Alternative panic buttons for Windows laptops where Escape needs Fn key
+bindsym $mod+Shift+F12 exec --no-startup-id ~/.local/bin/panic-button
+bindsym $mod+Shift+Delete exec --no-startup-id ~/.local/bin/panic-button
 
 # Quick pornhub (for the impatient slut)
 bindsym $mod+Shift+p exec --no-startup-id xdg-open https://pornhub.com
@@ -258,8 +261,6 @@ bar {
     }
 }
 
-# 🚨 PANIC BUTTON - Emergency boss key
-bindsym $mod+Shift+Escape exec --no-startup-id ~/.local/bin/panic-button
 
 # ═══════════════════════════════════════════════════════════════════════════
 # 🍆 DEGENERATE TOOLS - PORN & HENTAI UTILITIES
